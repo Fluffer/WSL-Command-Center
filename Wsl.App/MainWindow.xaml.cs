@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.Title = "WSL Command Center";
+        AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
 
         _pages["Dashboard"] = typeof(Views.DashboardPage);
         _pages["Deploy"] = typeof(Views.DeployPage);

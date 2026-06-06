@@ -33,24 +33,39 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Applies theme + accent + font. Accent brushes and the default font family are overridden
-    /// at Application scope (so every page/template sees them), the element theme is set, and when
-    /// <paramref name="rebuild"/> is true the current page is re-navigated so templates that bound
-    /// via {StaticResource} (which don't react to theme toggles) pick up the new resources.
+    /// Applies theme + accent + font. The theme is either a base theme (System/Light/Dark) or a
+    /// color-palette name (Dracula, Nord, …). Accent/palette brushes and the default font family
+    /// are overridden at Application scope (so every page/template sees them), the element theme
+    /// is set, and when <paramref name="rebuild"/> is true the theme is flipped and restored so
+    /// {ThemeResource} consumers re-resolve the new resources.
+    /// A palette replaces the Mica backdrop with its solid background and forces the dark base.
     /// </summary>
     public void ApplyAppearance(string theme, string accent, string font, bool rebuild)
     {
-        Theming.Appearance.OverrideResources(accent, font);
+        var pal = Theming.Palettes.Resolve(theme);
+        Theming.Appearance.OverrideResources(accent, font, pal);
 
         if (!string.IsNullOrWhiteSpace(font))
             Nav.FontFamily = new FontFamily(font);   // inherited path for non-styled text
 
-        RootGrid.RequestedTheme = theme switch
+        if (pal is not null)
         {
-            "Light" => ElementTheme.Light,
-            "Dark" => ElementTheme.Dark,
-            _ => ElementTheme.Default,
-        };
+            // Solid palette background; Mica would tint it with the desktop wallpaper.
+            SystemBackdrop = null;
+            RootGrid.Background = new SolidColorBrush(pal.Pane);
+            RootGrid.RequestedTheme = ElementTheme.Dark;   // all palettes are dark-based
+        }
+        else
+        {
+            RootGrid.Background = null;
+            SystemBackdrop ??= new Microsoft.UI.Xaml.Media.MicaBackdrop { Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base };
+            RootGrid.RequestedTheme = theme switch
+            {
+                "Light" => ElementTheme.Light,
+                "Dark" => ElementTheme.Dark,
+                _ => ElementTheme.Default,
+            };
+        }
 
         if (rebuild)
         {

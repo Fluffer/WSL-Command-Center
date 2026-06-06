@@ -3,7 +3,10 @@ namespace Wsl.Core.Settings;
 /// <summary>Persisted app preferences. Stored as JSON under %LOCALAPPDATA%.</summary>
 public sealed class AppSettings
 {
-    /// <summary>One of "System", "Light", "Dark". Defaults to "System".</summary>
+    /// <summary>
+    /// "System", "Light", "Dark", or a color-palette name (e.g. "Dracula", "Nord").
+    /// Palette themes force the dark base and recolor window/card/text surfaces.
+    /// </summary>
     public string Theme { get; set; } = "System";
 
     /// <summary>Accent color name (e.g. "Default", "Blue", "Green"). "Default" = system accent.</summary>

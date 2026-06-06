@@ -12,15 +12,11 @@
 
             <controls:SettingsCard
                 Header="App theme"
-                Description="'Use system setting' follows your Windows light/dark mode.">
+                Description="'Use system setting' follows your Windows light/dark mode. Below the line: popular developer palettes (Dracula, Nord, Catppuccin…) that recolor the whole app.">
                 <controls:SettingsCard.HeaderIcon>
                     <FontIcon Glyph="&#xE790;" />
                 </controls:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="ThemeCombo" MinWidth="200" SelectionChanged="Setting_Changed">
-                    <x:String>Use system setting</x:String>
-                    <x:String>Light</x:String>
-                    <x:String>Dark</x:String>
-                </ComboBox>
+                <ComboBox x:Name="ThemeCombo" MinWidth="200" SelectionChanged="Setting_Changed" />
             </controls:SettingsCard>
 
             <controls:SettingsCard

@@ -68,6 +68,31 @@ public class ThemeServiceTests
     }
 
     [Fact]
+    public void Save_ThenLoad_RoundTripsPaletteThemeName()
+    {
+        var path = TempFile();
+        try
+        {
+            new ThemeService(path).Save(new AppSettings { Theme = "Dracula" });
+            Assert.Equal("Dracula", new ThemeService(path).Load().Theme);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Load_SettingsFileWithUnknownFields_StillLoads()
+    {
+        var path = TempFile();
+        try
+        {
+            // e.g. a settings.json written by a build that had the separate Palette field
+            File.WriteAllText(path, """{"Theme":"Dark","Accent":"Red","Font":"Consolas","Palette":"Dracula"}""");
+            Assert.Equal("Dark", new ThemeService(path).Load().Theme);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public void Save_CreatesParentDirectory()
     {
         var dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

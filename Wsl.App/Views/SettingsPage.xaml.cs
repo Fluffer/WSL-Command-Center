@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Wsl.App.Theming;
@@ -10,7 +11,18 @@ public sealed partial class SettingsPage : Page
     private readonly IThemeService _theme;
     private bool _loading;
 
-    private static readonly string[] Themes = { "System", "Light", "Dark" };
+    /// <summary>Stored theme values, in combo order: base themes first, then palettes.</summary>
+    private static readonly string[] Themes = BuildThemes();
+
+    private static string[] BuildThemes()
+    {
+        var list = new List<string> { "System", "Light", "Dark" };
+        list.AddRange(Palettes.Names());
+        return list.ToArray();
+    }
+
+    /// <summary>"System" reads better as "Use system setting" in the combo.</summary>
+    private static string Display(string theme) => theme == "System" ? "Use system setting" : theme;
 
     public SettingsPage()
     {
@@ -20,6 +32,9 @@ public sealed partial class SettingsPage : Page
         _loading = true;
         var s = _theme.Load();
 
+        var displayNames = new string[Themes.Length];
+        for (var i = 0; i < Themes.Length; i++) displayNames[i] = Display(Themes[i]);
+        ThemeCombo.ItemsSource = displayNames;
         var ti = System.Array.IndexOf(Themes, s.Theme);
         ThemeCombo.SelectedIndex = ti >= 0 ? ti : 0;
 

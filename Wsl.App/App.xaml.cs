@@ -20,7 +20,7 @@ public partial class App : Application
         // Override accent + font resources BEFORE the window/NavigationView is built, so the
         // chrome (selection indicator, accent buttons) picks up the accent on first paint.
         var settings = Services.GetRequiredService<IThemeService>().Load();
-        Theming.Appearance.OverrideResources(settings.Accent, settings.Font);
+        Theming.Appearance.OverrideResources(settings.Accent, settings.Font, Theming.Palettes.Resolve(settings.Theme));
 
         _window = new MainWindow();
         MainWindowHandleHost = _window;

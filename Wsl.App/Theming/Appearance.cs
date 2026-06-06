@@ -5,16 +5,37 @@ using Windows.UI;
 namespace Wsl.App.Theming;
 
 /// <summary>
-/// Overrides the framework accent + default-font resources at Application scope.
-/// MUST run before the window (and its NavigationView) is constructed for the chrome to pick
-/// up the accent on first paint; for live changes, re-run then rebuild visible pages.
+/// Overrides the framework accent + default-font (and optional color-palette) resources at
+/// Application scope. MUST run before the window (and its NavigationView) is constructed for the
+/// chrome to pick up the accent on first paint; for live changes, re-run then rebuild visible pages.
 /// </summary>
 public static class Appearance
 {
-    public static void OverrideResources(string accent, string font)
+    /// <summary>Application-scope keys owned by the palette overlay; removed when palette is "None".</summary>
+    private static readonly string[] PaletteKeys =
+    {
+        "NavigationViewDefaultPaneBackground",
+        "NavigationViewExpandedPaneBackground",
+        "NavigationViewTopPaneBackground",
+        "NavigationViewContentBackground",
+        "NavigationViewContentGridBorderBrush",
+        "CardBackgroundFillColorDefaultBrush",
+        "CardBackgroundFillColorSecondaryBrush",
+        "CardStrokeColorDefaultBrush",
+        "TextFillColorPrimaryBrush",
+        "TextFillColorSecondaryBrush",
+        "TextFillColorTertiaryBrush",
+        "SolidBackgroundFillColorBaseBrush",
+    };
+
+    public static void OverrideResources(string accent, string font, Palette? palette = null)
     {
         var res = Application.Current.Resources;
-        var c = Accents.Resolve(accent);
+
+        // Palette supplies the accent only when the user left accent on "Default".
+        var c = palette is not null && accent == "Default"
+            ? palette.Accent
+            : Accents.Resolve(accent);
 
         res["SystemAccentColor"] = c;
         res["SystemAccentColorLight1"] = Lighten(c, 0.15);
@@ -34,6 +55,36 @@ public static class Appearance
 
         if (!string.IsNullOrWhiteSpace(font))
             res["ContentControlThemeFontFamily"] = new FontFamily(font);
+
+        if (palette is not null)
+            ApplyPalette(palette);
+        else
+            ClearPalette();
+    }
+
+    private static void ApplyPalette(Palette p)
+    {
+        var res = Application.Current.Resources;
+
+        res["NavigationViewDefaultPaneBackground"] = new SolidColorBrush(p.Pane);
+        res["NavigationViewExpandedPaneBackground"] = new SolidColorBrush(p.Pane);
+        res["NavigationViewTopPaneBackground"] = new SolidColorBrush(p.Pane);
+        res["NavigationViewContentBackground"] = new SolidColorBrush(p.Content);
+        res["NavigationViewContentGridBorderBrush"] = new SolidColorBrush(p.CardStroke);
+        res["CardBackgroundFillColorDefaultBrush"] = new SolidColorBrush(p.Card);
+        res["CardBackgroundFillColorSecondaryBrush"] = new SolidColorBrush(Lighten(p.Card, 0.04));
+        res["CardStrokeColorDefaultBrush"] = new SolidColorBrush(p.CardStroke);
+        res["TextFillColorPrimaryBrush"] = new SolidColorBrush(p.TextPrimary);
+        res["TextFillColorSecondaryBrush"] = new SolidColorBrush(p.TextSecondary);
+        res["TextFillColorTertiaryBrush"] = new SolidColorBrush(p.TextSecondary) { Opacity = 0.8 };
+        res["SolidBackgroundFillColorBaseBrush"] = new SolidColorBrush(p.Content);
+    }
+
+    private static void ClearPalette()
+    {
+        var res = Application.Current.Resources;
+        foreach (var key in PaletteKeys)
+            res.Remove(key);
     }
 
     private static Color Lighten(Color c, double f) => Color.FromArgb(

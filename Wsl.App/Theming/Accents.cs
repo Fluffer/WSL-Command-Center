@@ -41,6 +41,7 @@ public static class AppFonts
     {
         "Segoe UI Variable",
         "Segoe UI",
+        "Anthropic Sans",
         "Cascadia Mono",
         "Cascadia Code",
         "Consolas",

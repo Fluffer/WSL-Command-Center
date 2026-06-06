@@ -32,39 +32,40 @@ public sealed partial class MainWindow : Window
         NavigateTo("Dashboard");
     }
 
-    /// <summary>Applies a persisted theme string ("System"/"Light"/"Dark") to the UI root.</summary>
-    public void ApplyTheme(string theme)
+    /// <summary>
+    /// Applies theme + accent + font. Accent brushes and the default font family are overridden
+    /// at Application scope (so every page/template sees them), the element theme is set, and when
+    /// <paramref name="rebuild"/> is true the current page is re-navigated so templates that bound
+    /// via {StaticResource} (which don't react to theme toggles) pick up the new resources.
+    /// </summary>
+    public void ApplyAppearance(string theme, string accent, string font, bool rebuild)
     {
+        Theming.Appearance.OverrideResources(accent, font);
+
+        if (!string.IsNullOrWhiteSpace(font))
+            Nav.FontFamily = new FontFamily(font);   // inherited path for non-styled text
+
         RootGrid.RequestedTheme = theme switch
         {
             "Light" => ElementTheme.Light,
             "Dark" => ElementTheme.Dark,
             _ => ElementTheme.Default,
         };
-    }
 
-    /// <summary>Overrides the accent brushes on the UI root, then forces ThemeResource refresh.</summary>
-    public void ApplyAccent(string name)
-    {
-        var c = Theming.Accents.Resolve(name);
-        var res = RootGrid.Resources;
-        res["SystemAccentColor"] = c;
-        res["AccentFillColorDefaultBrush"] = new SolidColorBrush(c);
-        res["AccentFillColorSecondaryBrush"] = new SolidColorBrush(c) { Opacity = 0.9 };
-        res["AccentFillColorTertiaryBrush"] = new SolidColorBrush(c) { Opacity = 0.8 };
-
-        // Toggle the element theme to force {ThemeResource} consumers to re-resolve the brushes.
-        var current = RootGrid.RequestedTheme;
-        RootGrid.RequestedTheme = current == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
-        RootGrid.RequestedTheme = current;
-    }
-
-    /// <summary>Sets the UI font family on the NavigationView (a Control); FontFamily is an
-    /// inherited property, so it propagates to the nav items and all hosted pages.</summary>
-    public void ApplyFont(string family)
-    {
-        if (!string.IsNullOrWhiteSpace(family))
-            Nav.FontFamily = new FontFamily(family);
+        if (rebuild)
+        {
+            // Force {ThemeResource} consumers to re-resolve…
+            var t = RootGrid.RequestedTheme;
+            RootGrid.RequestedTheme = t == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+            RootGrid.RequestedTheme = t;
+            // …and rebuild the current page for {StaticResource} consumers.
+            var pageType = ContentFrame.CurrentSourcePageType;
+            if (pageType is not null)
+            {
+                ContentFrame.Navigate(pageType);
+                ContentFrame.BackStack.Clear();
+            }
+        }
     }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

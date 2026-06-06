@@ -45,10 +45,6 @@ public sealed partial class SettingsPage : Page
         _theme.Save(settings);
 
         if (App.MainWindowHandleHost is MainWindow mw)
-        {
-            mw.ApplyTheme(settings.Theme);
-            mw.ApplyAccent(settings.Accent);
-            mw.ApplyFont(settings.Font);
-        }
+            mw.ApplyAppearance(settings.Theme, settings.Accent, settings.Font, rebuild: true);
     }
 }

@@ -16,17 +16,17 @@ public partial class App : Application
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         Services = ServiceRegistration.Build();
+
+        // Override accent + font resources BEFORE the window/NavigationView is built, so the
+        // chrome (selection indicator, accent buttons) picks up the accent on first paint.
+        var settings = Services.GetRequiredService<IThemeService>().Load();
+        Theming.Appearance.OverrideResources(settings.Accent, settings.Font);
+
         _window = new MainWindow();
         MainWindowHandleHost = _window;
 
-        // Apply persisted appearance (theme + accent + font) before showing the window.
-        var settings = Services.GetRequiredService<IThemeService>().Load();
         if (_window is MainWindow mainWin)
-        {
-            mainWin.ApplyTheme(settings.Theme);
-            mainWin.ApplyAccent(settings.Accent);
-            mainWin.ApplyFont(settings.Font);
-        }
+            mainWin.ApplyAppearance(settings.Theme, settings.Accent, settings.Font, rebuild: false);
 
         _window.Activate();
 

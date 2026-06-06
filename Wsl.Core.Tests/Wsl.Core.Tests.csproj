@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Wsl.Core\Wsl.Core.csproj" />
     <ProjectReference Include="..\Wsl.Contracts\Wsl.Contracts.csproj" />
+    <ProjectReference Include="..\Wsl.Broker\Wsl.Broker.csproj" />
   </ItemGroup>
 
 </Project>

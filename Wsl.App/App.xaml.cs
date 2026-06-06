@@ -19,9 +19,14 @@ public partial class App : Application
         _window = new MainWindow();
         MainWindowHandleHost = _window;
 
-        // Apply the persisted theme before showing the window.
-        var theme = Services.GetRequiredService<IThemeService>().Load().Theme;
-        if (_window is MainWindow mainWin) mainWin.ApplyTheme(theme);
+        // Apply persisted appearance (theme + accent + font) before showing the window.
+        var settings = Services.GetRequiredService<IThemeService>().Load();
+        if (_window is MainWindow mainWin)
+        {
+            mainWin.ApplyTheme(settings.Theme);
+            mainWin.ApplyAccent(settings.Accent);
+            mainWin.ApplyFont(settings.Font);
+        }
 
         _window.Activate();
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Wsl.App;
 
@@ -40,6 +41,30 @@ public sealed partial class MainWindow : Window
             "Dark" => ElementTheme.Dark,
             _ => ElementTheme.Default,
         };
+    }
+
+    /// <summary>Overrides the accent brushes on the UI root, then forces ThemeResource refresh.</summary>
+    public void ApplyAccent(string name)
+    {
+        var c = Theming.Accents.Resolve(name);
+        var res = RootGrid.Resources;
+        res["SystemAccentColor"] = c;
+        res["AccentFillColorDefaultBrush"] = new SolidColorBrush(c);
+        res["AccentFillColorSecondaryBrush"] = new SolidColorBrush(c) { Opacity = 0.9 };
+        res["AccentFillColorTertiaryBrush"] = new SolidColorBrush(c) { Opacity = 0.8 };
+
+        // Toggle the element theme to force {ThemeResource} consumers to re-resolve the brushes.
+        var current = RootGrid.RequestedTheme;
+        RootGrid.RequestedTheme = current == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+        RootGrid.RequestedTheme = current;
+    }
+
+    /// <summary>Sets the UI font family on the NavigationView (a Control); FontFamily is an
+    /// inherited property, so it propagates to the nav items and all hosted pages.</summary>
+    public void ApplyFont(string family)
+    {
+        if (!string.IsNullOrWhiteSpace(family))
+            Nav.FontFamily = new FontFamily(family);
     }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

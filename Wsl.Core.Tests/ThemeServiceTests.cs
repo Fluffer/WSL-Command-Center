@@ -45,6 +45,29 @@ public class ThemeServiceTests
     }
 
     [Fact]
+    public void Save_ThenLoad_RoundTripsAccentAndFont()
+    {
+        var path = TempFile();
+        try
+        {
+            new ThemeService(path).Save(new AppSettings { Accent = "Green", Font = "Cascadia Mono" });
+            var loaded = new ThemeService(path).Load();
+            Assert.Equal("Green", loaded.Accent);
+            Assert.Equal("Cascadia Mono", loaded.Font);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Load_DefaultsAccentAndFont()
+    {
+        var svc = new ThemeService(TempFile());
+        var s = svc.Load();
+        Assert.Equal("Default", s.Accent);
+        Assert.Equal("Segoe UI Variable", s.Font);
+    }
+
+    [Fact]
     public void Save_CreatesParentDirectory()
     {
         var dir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

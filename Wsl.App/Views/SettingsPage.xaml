@@ -11,17 +11,39 @@
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Text="Appearance and app preferences." />
 
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel Spacing="12">
+            <Border Style="{StaticResource CardBorderStyle}" Padding="20">
+                <StackPanel Spacing="16">
                     <TextBlock Text="Appearance" Style="{StaticResource SubtitleTextBlockStyle}" />
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="Choose how the app looks. 'Use system setting' follows your Windows light/dark mode." />
-                    <muxc:RadioButtons x:Name="ThemeRadios" SelectionChanged="ThemeRadios_SelectionChanged">
-                        <x:String>Use system setting</x:String>
-                        <x:String>Light</x:String>
-                        <x:String>Dark</x:String>
-                    </muxc:RadioButtons>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Theme" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="'Use system setting' follows your Windows light/dark mode." />
+                        <muxc:RadioButtons x:Name="ThemeRadios" SelectionChanged="Setting_Changed">
+                            <x:String>Use system setting</x:String>
+                            <x:String>Light</x:String>
+                            <x:String>Dark</x:String>
+                        </muxc:RadioButtons>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Accent color" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="Highlight color for buttons and selections. 'Default' follows your Windows accent." />
+                        <ComboBox x:Name="AccentCombo" Width="240" HorizontalAlignment="Left"
+                                  SelectionChanged="Setting_Changed" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Font" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="Font used across the app. Monospace options (Cascadia, Consolas) give a console feel." />
+                        <ComboBox x:Name="FontCombo" Width="240" HorizontalAlignment="Left"
+                                  SelectionChanged="Setting_Changed" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -2272,14 +2272,17 @@ public class BrokerServer
         _verifier = verifier;
     }
 
-    /// <summary>Serves requests until the idle timeout elapses with no new connection.</summary>
+    /// <summary>Serves requests until the idle timeout elapses with no new connection.
+    /// The idle timer is recreated each loop iteration (so it resets after every served
+    /// request) and only bounds <c>WaitForConnectionAsync</c> — request handling receives the
+    /// outer <paramref name="ct"/>, so a long privileged op is never killed mid-flight.</summary>
     public async Task RunAsync(CancellationToken ct = default)
     {
         while (!ct.IsCancellationRequested)
         {
             using var server = CreatePipe();
             using var idleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            idleCts.CancelAfter(IdleTimeout);
+            idleCts.CancelAfter(IdleTimeout); // bounds the WaitForConnectionAsync below only
             try
             {
                 await server.WaitForConnectionAsync(idleCts.Token);
@@ -2583,36 +2586,50 @@ public class BrokerClient : IBrokerClient
 
     public async Task<BrokerResponse> SendAsync(BrokerRequest request, CancellationToken ct = default)
     {
-        await EnsureBrokerRunningAsync(ct);
+        // Try to connect to an already-running broker first (short timeout). Only one real
+        // connection is ever opened — no separate "probe" that could consume the broker's
+        // single FirstPipeInstance slot. If nothing is listening, launch elevated and retry.
+        var client = await TryConnectAsync(TimeSpan.FromMilliseconds(300), ct);
+        if (client is null)
+        {
+            if (!LaunchBrokerElevated())
+                return new BrokerResponse(false, "Elevation was cancelled.");
+            client = await TryConnectAsync(TimeSpan.FromSeconds(10), ct);
+            if (client is null)
+                return new BrokerResponse(false, "Broker did not start.");
+        }
 
-        using var client = new NamedPipeClientStream(
+        using (client)
+        {
+            // Verify the SERVER before sending anything.
+            var serverPid = Win32PipeClient.GetServerPid(client.SafePipeHandle);
+            if (serverPid < 0 || !_verifier.IsTrustedPeer(serverPid, "Wsl.Broker.exe"))
+                return new BrokerResponse(false, "Broker identity verification failed.");
+
+            await PipeFraming.WriteAsync<BrokerRequest>(client, request, ct);
+            var resp = await PipeFraming.ReadAsync<BrokerResponse>(client, ct);
+            return resp ?? new BrokerResponse(false, "No response from broker.");
+        }
+    }
+
+    private static async Task<NamedPipeClientStream?> TryConnectAsync(TimeSpan timeout, CancellationToken ct)
+    {
+        var client = new NamedPipeClientStream(
             ".", PipeName.Broker, PipeDirection.InOut, PipeOptions.Asynchronous);
-
         try
         {
-            await client.ConnectAsync(TimeSpan.FromSeconds(10), ct);
+            await client.ConnectAsync(timeout, ct);
+            return client;
         }
         catch (TimeoutException)
         {
-            return new BrokerResponse(false, "Broker did not start (elevation cancelled?)");
+            await client.DisposeAsync();
+            return null;
         }
-
-        // Verify the SERVER before sending anything.
-        var serverPid = Win32PipeClient.GetServerPid(client.SafePipeHandle);
-        if (serverPid < 0 || !_verifier.IsTrustedPeer(serverPid, "Wsl.Broker.exe"))
-            return new BrokerResponse(false, "Broker identity verification failed");
-
-        await PipeFraming.WriteAsync<BrokerRequest>(client, request, ct);
-        var resp = await PipeFraming.ReadAsync<BrokerResponse>(client, ct);
-        return resp ?? new BrokerResponse(false, "No response from broker");
     }
 
-    private async Task EnsureBrokerRunningAsync(CancellationToken ct)
+    private bool LaunchBrokerElevated()
     {
-        // If a broker is already listening, ConnectAsync below will succeed quickly.
-        // Otherwise launch it elevated (single UAC prompt).
-        if (await PipeExistsAsync()) return;
-
         var psi = new ProcessStartInfo
         {
             FileName = _brokerExePath,
@@ -2622,27 +2639,11 @@ public class BrokerClient : IBrokerClient
         try
         {
             Process.Start(psi);
+            return true;
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            // User declined UAC; ConnectAsync will time out and surface a friendly error.
-        }
-        // small grace handled by ConnectAsync timeout
-        await Task.CompletedTask;
-    }
-
-    private static Task<bool> PipeExistsAsync()
-    {
-        // Probe: a quick non-blocking connect attempt.
-        try
-        {
-            using var probe = new NamedPipeClientStream(".", PipeName.Broker, PipeDirection.InOut);
-            probe.Connect(50);
-            return Task.FromResult(true);
-        }
-        catch
-        {
-            return Task.FromResult(false);
+            return false; // user declined UAC
         }
     }
 }
@@ -2673,21 +2674,32 @@ git commit -m "feat(core): broker client with server verification + shared frami
 WinUI 3 ViewModels are tested in `Wsl.Core.Tests` (they depend only on Core services + a fake
 broker client). UI/XAML is verified by manual smoke run.
 
-- [ ] **Step 1: Create the WinUI 3 project**
+- [ ] **Step 1: Create the WinUI 3 project AND the ViewModel logic library**
+
+The ViewModels live in a plain `net8.0` class library (`Wsl.App.Logic`) so the xUnit project can
+reference them without referencing the WinUI exe. Create **both** projects now — `Wsl.App.Logic`
+must exist before `ServiceRegistration` (in this task) imports its namespace, otherwise the build
+breaks. (This is the ordering fix: do not defer the logic lib to a later task.)
 
 Run:
 
 ```powershell
 dotnet new winui3 -n Wsl.App -o Wsl.App
-dotnet sln add Wsl.App
-dotnet add Wsl.App reference Wsl.Core Wsl.Contracts
+dotnet new classlib -n Wsl.App.Logic -f net8.0 -o Wsl.App.Logic
+del Wsl.App.Logic\Class1.cs
+dotnet sln add Wsl.App Wsl.App.Logic
+dotnet add Wsl.App.Logic reference Wsl.Core Wsl.Contracts
+dotnet add Wsl.App.Logic package CommunityToolkit.Mvvm
+dotnet add Wsl.App reference Wsl.Core Wsl.Contracts Wsl.App.Logic
 dotnet add Wsl.App package CommunityToolkit.Mvvm
 dotnet add Wsl.App package Microsoft.Extensions.DependencyInjection
+dotnet add Wsl.Core.Tests reference Wsl.App.Logic
 ```
 
 (If `winui3` template is missing: `dotnet new install Microsoft.WindowsAppSDK.ProjectTemplates`,
-then re-run. Ensure the csproj has `<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>`
-and `<UseWinUI>true</UseWinUI>`.)
+then re-run. Ensure the app csproj has `<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>`
+and `<UseWinUI>true</UseWinUI>`. CommunityToolkit.Mvvm source generators work in a plain `net8.0`
+library — no WinUI dependency needed.)
 
 - [ ] **Step 2: Register services**
 
@@ -2697,7 +2709,6 @@ Create `Wsl.App/Services/ServiceRegistration.cs`:
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.Core;
 using Wsl.Core.Ipc;
-using Wsl.App.ViewModels;
 
 namespace Wsl.App.Services;
 
@@ -2719,22 +2730,24 @@ public static class ServiceRegistration
         services.AddSingleton<IPeerVerifier, WindowsPeerVerifier>();
         services.AddSingleton<IBrokerClient>(sp =>
         {
-            var dir = AppContext.BaseDirectory;
-            var brokerPath = Path.Combine(dir, "Wsl.Broker.exe");
+            var brokerPath = Path.Combine(AppContext.BaseDirectory, "Wsl.Broker.exe");
             return new BrokerClient(brokerPath, sp.GetRequiredService<IPeerVerifier>());
         });
 
-        // ViewModels
-        services.AddTransient<DashboardViewModel>();
-        services.AddTransient<DeployViewModel>();
-        services.AddTransient<BackupViewModel>();
-        services.AddTransient<ConfigViewModel>();
-        services.AddTransient<SetupViewModel>();
+        // ViewModels are registered here as each is implemented (Tasks 17-21):
+        //   services.AddTransient<DashboardViewModel>();  // Task 17
+        //   services.AddTransient<DeployViewModel>();      // Task 18
+        //   services.AddTransient<BackupViewModel>();      // Task 19
+        //   services.AddTransient<ConfigViewModel>();      // Task 20
+        //   services.AddTransient<SetupViewModel>();       // Task 21
 
         return services.BuildServiceProvider();
     }
 }
 ```
+
+Each page task uncomments (or adds) its own `AddTransient<…ViewModel>()` line plus a
+`using Wsl.App.Logic.ViewModels;` import. This keeps every task building green.
 
 - [ ] **Step 3: Wire DI into App.xaml.cs**
 
@@ -2791,47 +2804,63 @@ Replace `Wsl.App/MainWindow.xaml` with:
 </Window>
 ```
 
-Replace `Wsl.App/MainWindow.xaml.cs` with:
+Replace `Wsl.App/MainWindow.xaml.cs` with a page map that is empty now and gets one entry added
+by each page task (17-21). This compiles immediately because it references no page types yet:
 
 ```csharp
+using System;
+using System.Collections.Generic;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Wsl.App.Views;
 
 namespace Wsl.App;
 
 public sealed partial class MainWindow : Window
 {
+    // Page tasks (17-21) each add one entry, e.g. ["Dashboard"] = typeof(Views.DashboardPage).
+    private readonly Dictionary<string, Type> _pages = new();
+
     public MainWindow()
     {
         InitializeComponent();
         Nav.SelectedItem = Nav.MenuItems[0];
-        ContentFrame.Navigate(typeof(DashboardPage));
+        NavigateTo("Dashboard");
     }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItem is not NavigationViewItem item) return;
-        switch (item.Tag)
-        {
-            case "Dashboard": ContentFrame.Navigate(typeof(DashboardPage)); break;
-            case "Deploy": ContentFrame.Navigate(typeof(DeployPage)); break;
-            case "Backup": ContentFrame.Navigate(typeof(BackupPage)); break;
-            case "Config": ContentFrame.Navigate(typeof(ConfigPage)); break;
-            case "Setup": ContentFrame.Navigate(typeof(SetupPage)); break;
-        }
+        if (args.SelectedItem is NavigationViewItem item && item.Tag is string tag)
+            NavigateTo(tag);
+    }
+
+    private void NavigateTo(string tag)
+    {
+        if (_pages.TryGetValue(tag, out var pageType))
+            ContentFrame.Navigate(pageType);
+    }
+
+    /// <summary>Called by App after first-run detection (Task 23).</summary>
+    public void NavigateToSetup()
+    {
+        Nav.SelectedItem = Nav.MenuItems[4];
+        NavigateTo("Setup");
     }
 }
 ```
 
-(The `Views` referenced here are created in Tasks 17-21. Build will fail until those exist — that
-is expected; this task ends at the DI/shell wiring and is committed together with Dashboard in
-Task 17. Do not run a full build yet.)
+This task now builds and runs on its own: the shell appears with an empty content frame (no pages
+registered yet). Each page task fills in one `_pages[...]` entry.
 
-- [ ] **Step 5: Commit (scaffold only)**
+- [ ] **Step 5: Build to verify the shell compiles**
+
+Run: `dotnet build Wsl.App`
+Expected: Build succeeded. Running it shows the NavigationView with an empty content area.
+
+- [ ] **Step 6: Commit (scaffold)**
 
 ```bash
-git add Wsl.App/Wsl.App.csproj Wsl.App/App.xaml.cs Wsl.App/Services Wsl.App/MainWindow.xaml Wsl.App/MainWindow.xaml.cs WslCommandCenter.sln
-git commit -m "feat(app): WinUI3 scaffold, DI host, NavigationView shell"
+git add Wsl.App/Wsl.App.csproj Wsl.App.Logic Wsl.App/App.xaml.cs Wsl.App/Services Wsl.App/MainWindow.xaml Wsl.App/MainWindow.xaml.cs WslCommandCenter.sln
+git commit -m "feat(app): WinUI3 scaffold, logic lib, DI host, NavigationView shell"
 ```
 
 ---
@@ -2843,28 +2872,25 @@ git commit -m "feat(app): WinUI3 scaffold, DI host, NavigationView shell"
 - Create: `Wsl.App/Views/DashboardPage.xaml` + `.cs`
 - Test: `Wsl.Core.Tests/DashboardViewModelTests.cs`
 
-The app references Core; the test project already references Core. To test the VM we move it into
-a testable location: the VM lives in `Wsl.App` but depends only on `WslDistroService`. Because the
-test project cannot reference a WinUI exe, **ViewModels go in a small `Wsl.App.Logic` class
-library** referenced by both `Wsl.App` and the tests.
+`Wsl.App.Logic` already exists (created in Task 16) and is referenced by both `Wsl.App` and
+`Wsl.Core.Tests`. This task adds the Dashboard VM there, registers it in DI, and wires it into the
+NavigationView page map.
 
-- [ ] **Step 1: Create the Wsl.App.Logic library**
+- [ ] **Step 1: Register the Dashboard VM + nav entry**
 
-Run:
+In `Wsl.App/Services/ServiceRegistration.cs`, add `using Wsl.App.Logic.ViewModels;` and the
+registration line inside `Build()` (where the VM-registration comment block is):
 
-```powershell
-dotnet new classlib -n Wsl.App.Logic -f net8.0 -o Wsl.App.Logic
-del Wsl.App.Logic\Class1.cs
-dotnet sln add Wsl.App.Logic
-dotnet add Wsl.App.Logic reference Wsl.Core Wsl.Contracts
-dotnet add Wsl.App.Logic package CommunityToolkit.Mvvm
-dotnet add Wsl.App reference Wsl.App.Logic
-dotnet add Wsl.Core.Tests reference Wsl.App.Logic
+```csharp
+        services.AddTransient<DashboardViewModel>();
 ```
 
-Update `Wsl.App/Services/ServiceRegistration.cs` namespace import to
-`using Wsl.App.Logic.ViewModels;` (VMs now live in the logic lib) and likewise the
-`MainWindow`/page code-behind `using Wsl.App.Logic.ViewModels;`.
+In `Wsl.App/MainWindow.xaml.cs`, add the Dashboard entry to `_pages` in the constructor (before
+`NavigateTo("Dashboard")`):
+
+```csharp
+        _pages["Dashboard"] = typeof(Views.DashboardPage);
+```
 
 - [ ] **Step 2: Write the failing test**
 
@@ -3424,10 +3450,15 @@ The pickers need the active window handle. Add to `Wsl.App/App.xaml.cs`: a stati
 `OnLaunched` (assign `MainWindowHandleHost = _window;` right after creating it). Update the
 declaration of `_window` accordingly.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Register the VM + nav entry**
+
+In `ServiceRegistration.Build()` add `services.AddTransient<DeployViewModel>();`.
+In `MainWindow.xaml.cs` constructor add `_pages["Deploy"] = typeof(Views.DeployPage);`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add Wsl.App.Logic/ViewModels/DeployViewModel.cs Wsl.App/Views/DeployPage.xaml Wsl.App/Views/DeployPage.xaml.cs Wsl.App/App.xaml.cs Wsl.Core.Tests/DeployViewModelTests.cs
+git add Wsl.App.Logic/ViewModels/DeployViewModel.cs Wsl.App/Views/DeployPage.xaml Wsl.App/Views/DeployPage.xaml.cs Wsl.App/App.xaml.cs Wsl.App/Services/ServiceRegistration.cs Wsl.App/MainWindow.xaml.cs Wsl.Core.Tests/DeployViewModelTests.cs
 git commit -m "feat(app): deploy VM + page (catalog install + archive import)"
 ```
 
@@ -3678,10 +3709,15 @@ public sealed partial class BackupPage : Page
 }
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Register the VM + nav entry**
+
+In `ServiceRegistration.Build()` add `services.AddTransient<BackupViewModel>();`.
+In `MainWindow.xaml.cs` constructor add `_pages["Backup"] = typeof(Views.BackupPage);`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add Wsl.App.Logic/ViewModels/BackupViewModel.cs Wsl.App/Views/BackupPage.xaml Wsl.App/Views/BackupPage.xaml.cs Wsl.Core.Tests/BackupViewModelTests.cs
+git add Wsl.App.Logic/ViewModels/BackupViewModel.cs Wsl.App/Views/BackupPage.xaml Wsl.App/Views/BackupPage.xaml.cs Wsl.App/Services/ServiceRegistration.cs Wsl.App/MainWindow.xaml.cs Wsl.Core.Tests/BackupViewModelTests.cs
 git commit -m "feat(app): backup VM + page (export/restore)"
 ```
 
@@ -3957,10 +3993,15 @@ public sealed partial class ConfigPage : Page
 }
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Register the VM + nav entry**
+
+In `ServiceRegistration.Build()` add `services.AddTransient<ConfigViewModel>();`.
+In `MainWindow.xaml.cs` constructor add `_pages["Config"] = typeof(Views.ConfigPage);`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add Wsl.App.Logic/ViewModels/ConfigViewModel.cs Wsl.App/Views/ConfigPage.xaml Wsl.App/Views/ConfigPage.xaml.cs Wsl.Core.Tests/ConfigViewModelTests.cs
+git add Wsl.App.Logic/ViewModels/ConfigViewModel.cs Wsl.App/Views/ConfigPage.xaml Wsl.App/Views/ConfigPage.xaml.cs Wsl.App/Services/ServiceRegistration.cs Wsl.App/MainWindow.xaml.cs Wsl.Core.Tests/ConfigViewModelTests.cs
 git commit -m "feat(app): config VM + page (global + per-distro)"
 ```
 
@@ -4216,10 +4257,15 @@ public sealed partial class SetupPage : Page
 }
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Register the VM + nav entry**
+
+In `ServiceRegistration.Build()` add `services.AddTransient<SetupViewModel>();`.
+In `MainWindow.xaml.cs` constructor add `_pages["Setup"] = typeof(Views.SetupPage);`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add Wsl.App.Logic/ViewModels/SetupViewModel.cs Wsl.App/Views/SetupPage.xaml Wsl.App/Views/SetupPage.xaml.cs Wsl.Core.Tests/SetupViewModelTests.cs
+git add Wsl.App.Logic/ViewModels/SetupViewModel.cs Wsl.App/Views/SetupPage.xaml Wsl.App/Views/SetupPage.xaml.cs Wsl.App/Services/ServiceRegistration.cs Wsl.App/MainWindow.xaml.cs Wsl.Core.Tests/SetupViewModelTests.cs
 git commit -m "feat(app): setup VM + page (bootstrap orchestration)"
 ```
 
@@ -4344,15 +4390,7 @@ a bootstrap is mid-flight. Replace `OnLaunched` body with:
     }
 ```
 
-Add `NavigateToSetup()` to `Wsl.App/MainWindow.xaml.cs`:
-
-```csharp
-    public void NavigateToSetup()
-    {
-        Nav.SelectedItem = Nav.MenuItems[4]; // Setup
-        ContentFrame.Navigate(typeof(Wsl.App.Views.SetupPage));
-    }
-```
+`NavigateToSetup()` already exists on `MainWindow` (added in Task 16). No change needed there.
 
 (Add `using Microsoft.Extensions.DependencyInjection;` to `App.xaml.cs` if not present.)
 

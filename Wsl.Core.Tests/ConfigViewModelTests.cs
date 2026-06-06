@@ -20,7 +20,7 @@ public class ConfigViewModelTests
         try
         {
             var runner = new FakeProcessRunner();
-            var vm = new ConfigViewModel(MakeConfigService(runner, tmp));
+            var vm = new ConfigViewModel(MakeConfigService(runner, tmp), new WslDistroService(runner));
 
             await vm.LoadGlobalAsync();
 
@@ -38,7 +38,7 @@ public class ConfigViewModelTests
         try
         {
             var runner = new FakeProcessRunner();
-            var vm = new ConfigViewModel(MakeConfigService(runner, tmp));
+            var vm = new ConfigViewModel(MakeConfigService(runner, tmp), new WslDistroService(runner));
             await vm.LoadGlobalAsync();
             vm.Memory = "16GB";
 
@@ -56,12 +56,27 @@ public class ConfigViewModelTests
     {
         var runner = new FakeProcessRunner();
         runner.Enqueue(0, "[user]\ndefault=peter\n[boot]\nsystemd=true\n");
-        var vm = new ConfigViewModel(MakeConfigService(runner, "unused")) { SelectedDistro = "Ubuntu" };
+        var vm = new ConfigViewModel(MakeConfigService(runner, "unused"), new WslDistroService(runner)) { SelectedDistro = "Ubuntu" };
 
         await vm.LoadDistroAsync();
 
         Assert.Equal("peter", vm.DefaultUser);
         Assert.True(vm.Systemd);
         Assert.Equal(new[] { "-d", "Ubuntu", "-u", "root", "cat", "/etc/wsl.conf" }, runner.AllArgs[0]);
+    }
+
+    [Fact]
+    public async Task LoadDistros_populates_from_list()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0,
+            "  NAME      STATE     VERSION\r\n" +
+            "* Ubuntu    Stopped   2\r\n" +
+            "  Debian    Running   2\r\n");
+        var vm = new ConfigViewModel(MakeConfigService(runner, "unused"), new WslDistroService(runner));
+
+        await vm.LoadDistrosAsync();
+
+        Assert.Equal(new[] { "Ubuntu", "Debian" }, vm.Distros);
     }
 }

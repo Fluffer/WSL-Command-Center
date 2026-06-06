@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wsl.Core;
@@ -7,10 +8,29 @@ namespace Wsl.App.Logic.ViewModels;
 public partial class ConfigViewModel : ObservableObject
 {
     private readonly WslConfigService _config;
+    private readonly WslDistroService _distros;
     private WslGlobalConfig _global = new();
     private WslDistroConfig _distro = new();
 
-    public ConfigViewModel(WslConfigService config) => _config = config;
+    public ConfigViewModel(WslConfigService config, WslDistroService distros)
+    {
+        _config = config;
+        _distros = distros;
+    }
+
+    public ObservableCollection<string> Distros { get; } = new();
+
+    [RelayCommand]
+    public async Task LoadDistrosAsync()
+    {
+        await Guarded(async () =>
+        {
+            var list = await _distros.ListAsync();
+            Distros.Clear();
+            foreach (var d in list)
+                Distros.Add(d.Name);
+        });
+    }
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _statusMessage;

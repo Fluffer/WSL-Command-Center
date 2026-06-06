@@ -14,6 +14,7 @@ public sealed partial class ConfigPage : Page
     {
         Vm = App.Services.GetRequiredService<ConfigViewModel>();
         InitializeComponent();
+        _ = Vm.LoadDistrosAsync();
     }
 
     private async void Shutdown_Click(object s, RoutedEventArgs e)

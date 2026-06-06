@@ -10,7 +10,7 @@ public class BackupViewModelTests
     public async Task Export_calls_export_with_selected_format()
     {
         var runner = new FakeProcessRunner();
-        var vm = new BackupViewModel(new WslBackupService(runner))
+        var vm = new BackupViewModel(new WslBackupService(runner), new WslDistroService(runner))
         {
             ExportDistro = "Ubuntu",
             ExportPath = @"C:\b\ubuntu.vhdx",
@@ -29,7 +29,7 @@ public class BackupViewModelTests
     public async Task Restore_calls_import_with_source_format()
     {
         var runner = new FakeProcessRunner();
-        var vm = new BackupViewModel(new WslBackupService(runner))
+        var vm = new BackupViewModel(new WslBackupService(runner), new WslDistroService(runner))
         {
             RestoreName = "Ubuntu",
             RestoreInstallDir = @"C:\wsl\ubuntu",
@@ -50,7 +50,7 @@ public class BackupViewModelTests
     {
         var runner = new FakeProcessRunner();
         runner.Enqueue(1, "", "There is no distribution with the supplied name.");
-        var vm = new BackupViewModel(new WslBackupService(runner))
+        var vm = new BackupViewModel(new WslBackupService(runner), new WslDistroService(runner))
         {
             ExportDistro = "Ghost", ExportPath = @"C:\b\x.tar", ExportFormat = ExportFormat.Tar,
         };
@@ -58,5 +58,20 @@ public class BackupViewModelTests
         await vm.ExportAsync();
 
         Assert.NotNull(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task LoadDistros_populates_from_list()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0,
+            "  NAME      STATE     VERSION\r\n" +
+            "* Ubuntu    Stopped   2\r\n" +
+            "  Debian    Running   2\r\n");
+        var vm = new BackupViewModel(new WslBackupService(runner), new WslDistroService(runner));
+
+        await vm.LoadDistrosAsync();
+
+        Assert.Equal(new[] { "Ubuntu", "Debian" }, vm.Distros);
     }
 }

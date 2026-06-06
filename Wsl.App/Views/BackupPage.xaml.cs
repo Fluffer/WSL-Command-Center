@@ -16,6 +16,7 @@ public sealed partial class BackupPage : Page
     {
         Vm = App.Services.GetRequiredService<BackupViewModel>();
         InitializeComponent();
+        _ = Vm.LoadDistrosAsync();
     }
 
     private async void BrowseExport_Click(object s, RoutedEventArgs e)

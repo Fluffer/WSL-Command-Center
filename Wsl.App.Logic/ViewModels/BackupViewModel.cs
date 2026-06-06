@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wsl.Core;
@@ -7,8 +8,27 @@ namespace Wsl.App.Logic.ViewModels;
 public partial class BackupViewModel : ObservableObject
 {
     private readonly WslBackupService _backup;
+    private readonly WslDistroService _distros;
 
-    public BackupViewModel(WslBackupService backup) => _backup = backup;
+    public BackupViewModel(WslBackupService backup, WslDistroService distros)
+    {
+        _backup = backup;
+        _distros = distros;
+    }
+
+    public ObservableCollection<string> Distros { get; } = new();
+
+    [RelayCommand]
+    public async Task LoadDistrosAsync()
+    {
+        await Guarded(async () =>
+        {
+            var list = await _distros.ListAsync();
+            Distros.Clear();
+            foreach (var d in list)
+                Distros.Add(d.Name);
+        });
+    }
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _statusMessage;

@@ -14,7 +14,12 @@
                          Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
 
             <TextBlock Text="Export" Style="{StaticResource SubtitleTextBlockStyle}" />
-            <TextBox Header="Distro" Text="{x:Bind Vm.ExportDistro, Mode=TwoWay}" Width="320" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox Header="Distro" Width="240"
+                          ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
+                          SelectedItem="{x:Bind Vm.ExportDistro, Mode=TwoWay}" />
+                <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" VerticalAlignment="Bottom" />
+            </StackPanel>
             <ComboBox Header="Format" ItemsSource="{x:Bind Vm.Formats}"
                       SelectedItem="{x:Bind Vm.ExportFormat, Mode=TwoWay}" Width="160" />
             <StackPanel Orientation="Horizontal" Spacing="8">

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:core="using:Wsl.Core">
+    <Grid Padding="24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="Distributions" Style="{StaticResource TitleTextBlockStyle}" />
+            <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}" />
+            <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" Width="20" Height="20" />
+        </StackPanel>
+
+        <muxc:InfoBar Grid.Row="1" IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                     Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+
+        <ListView Grid.Row="2" ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="core:Distro">
+                    <Grid ColumnSpacing="16" Padding="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="60" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind State}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind Version}" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8">
+                            <Button Content="Start" Click="Start_Click" Tag="{x:Bind Name}" />
+                            <Button Content="Stop" Click="Stop_Click" Tag="{x:Bind Name}" />
+                            <Button Content="Set Default" Click="SetDefault_Click" Tag="{x:Bind Name}" />
+                            <Button Content="Unregister" Click="Unregister_Click" Tag="{x:Bind Name}" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

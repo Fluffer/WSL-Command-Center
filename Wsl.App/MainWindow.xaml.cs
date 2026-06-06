@@ -13,6 +13,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _pages["Dashboard"] = typeof(Views.DashboardPage);
         Nav.SelectedItem = Nav.MenuItems[0];
         NavigateTo("Dashboard");
     }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.Core;
 using Wsl.Core.Ipc;
+using Wsl.App.Logic.ViewModels;
 
 namespace Wsl.App.Services;
 
@@ -27,7 +28,7 @@ public static class ServiceRegistration
         });
 
         // ViewModels are registered here as each is implemented (Tasks 17-21):
-        //   services.AddTransient<DashboardViewModel>();  // Task 17
+        services.AddTransient<DashboardViewModel>();       // Task 17
         //   services.AddTransient<DeployViewModel>();      // Task 18
         //   services.AddTransient<BackupViewModel>();      // Task 19
         //   services.AddTransient<ConfigViewModel>();      // Task 20

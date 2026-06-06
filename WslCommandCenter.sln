@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wsl.Contracts", "Wsl.Contra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wsl.Core.Tests", "Wsl.Core.Tests\Wsl.Core.Tests.csproj", "{8EFF172F-81DC-4106-9C5E-F138F79CE33A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wsl.Broker", "Wsl.Broker\Wsl.Broker.csproj", "{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{8EFF172F-81DC-4106-9C5E-F138F79CE33A}.Release|x64.Build.0 = Release|Any CPU
 		{8EFF172F-81DC-4106-9C5E-F138F79CE33A}.Release|x86.ActiveCfg = Release|Any CPU
 		{8EFF172F-81DC-4106-9C5E-F138F79CE33A}.Release|x86.Build.0 = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|x64.Build.0 = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Debug|x86.Build.0 = Debug|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|x64.Build.0 = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{D2BC7D76-95BF-47FE-9858-EAB3CAA4D5EF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

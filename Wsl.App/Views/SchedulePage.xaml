@@ -36,8 +36,17 @@
                         <muxc:NumberBox Header="Keep newest" Value="{x:Bind Vm.KeepCount, Mode=TwoWay}"
                                         Minimum="1" Maximum="365" SpinButtonPlacementMode="Compact" Width="140" />
                     </StackPanel>
-                    <Button Content="Create schedule" Command="{x:Bind Vm.CreateCommand}"
-                            Style="{StaticResource AccentButtonStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Create schedule" Command="{x:Bind Vm.CreateCommand}"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        <Button Click="CopyPs_Click"
+                                ToolTipService.ToolTip="Copy the backup script this schedule runs to the clipboard">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE756;" FontSize="14" />
+                                <TextBlock Text="Copy PowerShell" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

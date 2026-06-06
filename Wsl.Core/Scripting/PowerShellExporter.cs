@@ -15,6 +15,8 @@ public sealed class PowerShellExporter : IPowerShellExporter
             ? $"wsl.exe --import {Q(name)} {Q(installDir)} {Q(archivePath)} --vhd --version {version}"
             : $"wsl.exe --import {Q(name)} {Q(installDir)} {Q(archivePath)} --version {version}";
 
+    public string Install(string name) => $"wsl.exe --install -d {Q(name)} --no-launch";
+
     public string Start(string name) => $"wsl.exe -d {Q(name)} -- true";
     public string Terminate(string name) => $"wsl.exe --terminate {Q(name)}";
     public string SetDefault(string name) => $"wsl.exe --set-default {Q(name)}";
@@ -24,6 +26,20 @@ public sealed class PowerShellExporter : IPowerShellExporter
 
     public string Optimize(string name) =>
         $"wsl.exe --terminate {Q(name)}\r\nwsl.exe --manage {Q(name)} --set-sparse true";
+
+    public string Shutdown() => "wsl.exe --shutdown";
+
+    /// <summary>
+    /// The full Setup sequence mirroring the elevated broker: enable both Windows features,
+    /// update the kernel, set WSL 2 as default. Must run from an elevated (admin) shell.
+    /// </summary>
+    public string EnableFeatures() => string.Join("\r\n", new[]
+    {
+        "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
+        "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
+        "wsl.exe --update",
+        "wsl.exe --set-default-version 2",
+    });
 
     private static string FormatFlag(ExportFormat fmt) => fmt switch
     {

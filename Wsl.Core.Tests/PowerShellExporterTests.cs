@@ -52,4 +52,25 @@ public class PowerShellExporterTests
     public void Optimize_TerminateThenSetSparse()
         => Assert.Equal("wsl.exe --terminate Ubuntu\r\nwsl.exe --manage Ubuntu --set-sparse true",
             _x.Optimize("Ubuntu"));
+
+    [Fact]
+    public void Install_NoLaunch_Command()
+        => Assert.Equal("wsl.exe --install -d Ubuntu --no-launch", _x.Install("Ubuntu"));
+
+    [Fact]
+    public void Install_QuotesNameWithSpaces()
+        => Assert.Equal("wsl.exe --install -d \"My Distro\" --no-launch", _x.Install("My Distro"));
+
+    [Fact]
+    public void Shutdown_Command()
+        => Assert.Equal("wsl.exe --shutdown", _x.Shutdown());
+
+    [Fact]
+    public void EnableFeatures_MirrorsBrokerSequence()
+        => Assert.Equal(
+            "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart\r\n" +
+            "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart\r\n" +
+            "wsl.exe --update\r\n" +
+            "wsl.exe --set-default-version 2",
+            _x.EnableFeatures());
 }

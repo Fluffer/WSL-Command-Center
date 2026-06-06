@@ -70,6 +70,11 @@ public partial class ScheduleViewModel : ObservableObject
         });
     }
 
+    /// <summary>The PowerShell the scheduled task runs for the current form values (timestamped
+    /// export + prune to KeepCount newest). Used by the "Copy PowerShell" button.</summary>
+    public string BuildScriptPreview()
+        => _sched.BuildScript(new BackupSchedule(Distro, Folder, Format, Frequency, Time, KeepCount));
+
     private async Task RefreshSchedulesInner()
     {
         var names = await _sched.ListAsync();

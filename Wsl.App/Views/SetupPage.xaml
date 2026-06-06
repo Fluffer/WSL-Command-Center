@@ -17,7 +17,16 @@
         <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                      Severity="Informational" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
 
-        <Button Content="Enable WSL features" Command="{x:Bind Vm.EnableFeaturesCommand}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Enable WSL features" Command="{x:Bind Vm.EnableFeaturesCommand}" />
+            <Button Click="CopyFeaturesPs_Click"
+                    ToolTipService.ToolTip="Copy the equivalent elevated commands to the clipboard">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE756;" FontSize="14" />
+                    <TextBlock Text="Copy PowerShell" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
 
         <muxc:InfoBar IsOpen="{x:Bind Vm.RebootRequired, Mode=OneWay}" Severity="Warning"
                      Title="Restart required"

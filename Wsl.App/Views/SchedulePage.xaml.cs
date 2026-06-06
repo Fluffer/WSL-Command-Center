@@ -32,4 +32,10 @@ public sealed partial class SchedulePage : Page
         if (s is FrameworkElement { Tag: string taskName })
             await Vm.DeleteAsync(taskName);
     }
+
+    private void CopyPs_Click(object s, RoutedEventArgs e)
+    {
+        ClipboardHelper.CopyText(Vm.BuildScriptPreview());
+        Vm.StatusMessage = "Copied backup script to clipboard.";
+    }
 }

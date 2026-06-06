@@ -5,6 +5,7 @@ public interface IPowerShellExporter
 {
     string Export(string name, string outPath, ExportFormat fmt);
     string Restore(string name, string installDir, string archivePath, ExportFormat sourceFmt, int version);
+    string Install(string name);
     string Start(string name);
     string Terminate(string name);
     string SetDefault(string name);
@@ -12,4 +13,6 @@ public interface IPowerShellExporter
     string Unregister(string name);
     string List();
     string Optimize(string name);
+    string Shutdown();
+    string EnableFeatures();
 }

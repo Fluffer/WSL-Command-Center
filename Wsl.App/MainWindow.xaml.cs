@@ -54,17 +54,13 @@ public sealed partial class MainWindow : Window
 
         if (rebuild)
         {
-            // Force {ThemeResource} consumers to re-resolve…
+            // Force {ThemeResource} consumers (theme, font, accent buttons) to re-resolve.
+            // NOTE: do NOT re-navigate the current page — that would destroy the Settings page
+            // mid-interaction and make the selectors appear to do nothing. Pages that bind via
+            // {StaticResource} simply pick up the new resources the next time they're navigated to.
             var t = RootGrid.RequestedTheme;
             RootGrid.RequestedTheme = t == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
             RootGrid.RequestedTheme = t;
-            // …and rebuild the current page for {StaticResource} consumers.
-            var pageType = ContentFrame.CurrentSourcePageType;
-            if (pageType is not null)
-            {
-                ContentFrame.Navigate(pageType);
-                ContentFrame.BackStack.Clear();
-            }
         }
     }
 

@@ -25,8 +25,10 @@
                         <TextBlock Text="{x:Bind Vm.ProcessorsDefaultHint}" Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
-                        <TextBox Header="Networking mode" Text="{x:Bind Vm.Networking, Mode=TwoWay}" Width="240" />
-                        <TextBlock Text="Empty = NAT (the WSL2 default)." Style="{StaticResource CaptionTextBlockStyle}"
+                        <ComboBox Header="Networking mode" Width="240" IsEditable="True"
+                                  ItemsSource="{x:Bind Vm.NetworkingModes}"
+                                  Text="{x:Bind Vm.Networking, Mode=TwoWay}" />
+                        <TextBlock Text="Empty = NAT (the WSL2 default). 'mirrored' shares the Windows network stack." Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
                         <ToggleSwitch Header="Localhost forwarding" IsOn="{x:Bind Vm.LocalhostForwarding, Mode=TwoWay}" />

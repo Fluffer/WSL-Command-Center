@@ -20,6 +20,9 @@ public partial class ConfigViewModel : ObservableObject
 
     public ObservableCollection<string> Distros { get; } = new();
 
+    /// <summary>Valid [wsl2] networkingMode values; editable combo still allows a custom one.</summary>
+    public string[] NetworkingModes { get; } = { "NAT", "mirrored" };
+
     // Hints showing what WSL2 falls back to when these fields are left empty,
     // computed from the host's actual hardware.
     public string MemoryDefaultHint { get; } = BuildMemoryHint();

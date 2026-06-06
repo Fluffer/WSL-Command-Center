@@ -21,7 +21,7 @@ public sealed partial class SettingsPage : Page
         var s = _theme.Load();
 
         var ti = System.Array.IndexOf(Themes, s.Theme);
-        ThemeRadios.SelectedIndex = ti >= 0 ? ti : 0;
+        ThemeCombo.SelectedIndex = ti >= 0 ? ti : 0;
 
         AccentCombo.ItemsSource = Accents.Names();
         AccentCombo.SelectedItem = System.Array.IndexOf(Accents.Names(), s.Accent) >= 0 ? s.Accent : "Default";
@@ -38,7 +38,7 @@ public sealed partial class SettingsPage : Page
 
         var settings = new AppSettings
         {
-            Theme = ThemeRadios.SelectedIndex >= 0 ? Themes[ThemeRadios.SelectedIndex] : "System",
+            Theme = ThemeCombo.SelectedIndex >= 0 ? Themes[ThemeCombo.SelectedIndex] : "System",
             Accent = AccentCombo.SelectedItem as string ?? "Default",
             Font = FontCombo.SelectedItem as string ?? AppFonts.All[0],
         };

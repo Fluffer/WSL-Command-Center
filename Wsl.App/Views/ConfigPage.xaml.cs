@@ -21,6 +21,14 @@ public sealed partial class ConfigPage : Page
         _ = Vm.LoadDistrosAsync();  // populate the per-distro dropdown
     }
 
+    // Toggle between the Global (.wslconfig) and Per-distro (wsl.conf) panels.
+    private void ScopeBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+    {
+        var global = sender.SelectedItem == GlobalScope;
+        GlobalPanel.Visibility = global ? Visibility.Visible : Visibility.Collapsed;
+        DistroPanel.Visibility = global ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     // Auto-load the selected distro's wsl.conf as soon as it's picked.
     private async void Distro_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

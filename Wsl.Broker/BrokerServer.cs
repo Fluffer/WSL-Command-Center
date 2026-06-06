@@ -1,8 +1,6 @@
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Text;
-using System.Text.Json;
 using Wsl.Contracts;
 using Wsl.Core;
 using Wsl.Core.Ipc;
@@ -12,8 +10,6 @@ namespace Wsl.Broker;
 public class BrokerServer
 {
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(60);
-    private static readonly JsonSerializerOptions JsonOpts =
-        new() { TypeInfoResolver = BrokerJsonContext.Default };
 
     private readonly PrivilegedOperations _ops;
     private readonly IPeerVerifier _verifier;
@@ -72,7 +68,7 @@ public class BrokerServer
 
     private async Task HandleOneAsync(NamedPipeServerStream server, CancellationToken ct)
     {
-        var request = await ReadMessageAsync<BrokerRequest>(server, ct);
+        var request = await PipeFraming.ReadAsync<BrokerRequest>(server, ct);
         BrokerResponse response;
         try
         {
@@ -84,41 +80,7 @@ public class BrokerServer
         {
             response = new BrokerResponse(false, ex.Message);
         }
-        await WriteMessageAsync(server, response, ct);
+        await PipeFraming.WriteAsync(server, response, ct);
         server.Disconnect();
-    }
-
-    // Length-prefixed (4-byte LE) UTF-8 JSON framing.
-    private static async Task<T?> ReadMessageAsync<T>(Stream s, CancellationToken ct) where T : class
-    {
-        var lenBuf = new byte[4];
-        if (!await ReadExactAsync(s, lenBuf, ct)) return null;
-        var len = BitConverter.ToInt32(lenBuf, 0);
-        if (len <= 0 || len > 1_000_000) return null;
-        var payload = new byte[len];
-        if (!await ReadExactAsync(s, payload, ct)) return null;
-        var json = Encoding.UTF8.GetString(payload);
-        return JsonSerializer.Deserialize<T>(json, JsonOpts);
-    }
-
-    private static async Task WriteMessageAsync<T>(Stream s, T message, CancellationToken ct)
-    {
-        var json = JsonSerializer.Serialize(message, JsonOpts);
-        var payload = Encoding.UTF8.GetBytes(json);
-        await s.WriteAsync(BitConverter.GetBytes(payload.Length), ct);
-        await s.WriteAsync(payload, ct);
-        await s.FlushAsync(ct);
-    }
-
-    private static async Task<bool> ReadExactAsync(Stream s, byte[] buf, CancellationToken ct)
-    {
-        var off = 0;
-        while (off < buf.Length)
-        {
-            var n = await s.ReadAsync(buf.AsMemory(off), ct);
-            if (n == 0) return false;
-            off += n;
-        }
-        return true;
     }
 }

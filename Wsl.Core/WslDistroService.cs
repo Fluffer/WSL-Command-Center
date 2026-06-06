@@ -37,6 +37,27 @@ public class WslDistroService
         return distros;
     }
 
+    public Task StartAsync(string name, CancellationToken ct = default)
+        => Run(new[] { "-d", name, "--", "true" }, $"Start {name}", ct);
+
+    public Task TerminateAsync(string name, CancellationToken ct = default)
+        => Run(new[] { "--terminate", name }, $"Terminate {name}", ct);
+
+    public Task SetDefaultAsync(string name, CancellationToken ct = default)
+        => Run(new[] { "--set-default", name }, $"Set default {name}", ct);
+
+    public Task SetVersionAsync(string name, int version, CancellationToken ct = default)
+        => Run(new[] { "--set-version", name, version.ToString() }, $"Set version {name}", ct);
+
+    public Task UnregisterAsync(string name, CancellationToken ct = default)
+        => Run(new[] { "--unregister", name }, $"Unregister {name}", ct);
+
+    private async Task Run(string[] args, string op, CancellationToken ct)
+    {
+        var result = await _runner.RunAsync("wsl.exe", args, null, ct);
+        WslErrorMapper.ThrowIfFailed(result, op);
+    }
+
     private static DistroState ParseState(string s) => s switch
     {
         "Running" => DistroState.Running,

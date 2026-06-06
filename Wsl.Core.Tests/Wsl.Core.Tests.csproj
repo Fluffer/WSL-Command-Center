@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Wsl.Core\Wsl.Core.csproj" />
     <ProjectReference Include="..\Wsl.Contracts\Wsl.Contracts.csproj" />
     <ProjectReference Include="..\Wsl.Broker\Wsl.Broker.csproj" />
+    <ProjectReference Include="..\Wsl.App.Logic\Wsl.App.Logic.csproj" />
   </ItemGroup>
 
 </Project>

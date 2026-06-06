@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Wsl.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Wsl.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

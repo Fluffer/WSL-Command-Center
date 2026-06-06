@@ -18,8 +18,17 @@
                     <StackPanel Spacing="12" Margin="0,12,0,0">
                         <Button Content="Load" Command="{x:Bind Vm.LoadGlobalCommand}" />
                         <TextBox Header="Memory (e.g. 8GB)" Text="{x:Bind Vm.Memory, Mode=TwoWay}" Width="240" />
+                        <TextBlock Text="{x:Bind Vm.MemoryDefaultHint}" Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
                         <TextBox Header="Processors" Text="{x:Bind Vm.Processors, Mode=TwoWay}" Width="240" />
+                        <TextBlock Text="{x:Bind Vm.ProcessorsDefaultHint}" Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
                         <TextBox Header="Networking mode" Text="{x:Bind Vm.Networking, Mode=TwoWay}" Width="240" />
+                        <TextBlock Text="Empty = NAT (the WSL2 default)." Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
                         <ToggleSwitch Header="Localhost forwarding" IsOn="{x:Bind Vm.LocalhostForwarding, Mode=TwoWay}" />
                         <Button Content="Save" Command="{x:Bind Vm.SaveGlobalCommand}" />
                     </StackPanel>

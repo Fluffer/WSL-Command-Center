@@ -20,6 +20,23 @@ public partial class ConfigViewModel : ObservableObject
 
     public ObservableCollection<string> Distros { get; } = new();
 
+    // Hints showing what WSL2 falls back to when these fields are left empty,
+    // computed from the host's actual hardware.
+    public string MemoryDefaultHint { get; } = BuildMemoryHint();
+    public string ProcessorsDefaultHint { get; } =
+        $"Empty = WSL2 uses all {SystemInfo.LogicalProcessors} logical processors.";
+    public string SwapDefaultHint { get; } =
+        "Empty = WSL2 swap defaults to 25% of its memory limit.";
+
+    private static string BuildMemoryHint()
+    {
+        var total = SystemInfo.TotalPhysicalGiB();
+        if (total <= 0)
+            return "Empty = WSL2 reserves 50% of total RAM. Set a value (e.g. 8GB) to cap it.";
+        var half = Math.Round(total / 2, 1);
+        return $"Empty = WSL2 reserves 50% of RAM ≈ {half} GB of {total} GB. Set a value (e.g. 8GB) to cap it.";
+    }
+
     [RelayCommand]
     public async Task LoadDistrosAsync()
     {

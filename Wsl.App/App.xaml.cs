@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Wsl.App.Services;
+using Wsl.Core.Settings;
 
 namespace Wsl.App;
 
@@ -17,6 +18,11 @@ public partial class App : Application
         Services = ServiceRegistration.Build();
         _window = new MainWindow();
         MainWindowHandleHost = _window;
+
+        // Apply the persisted theme before showing the window.
+        var theme = Services.GetRequiredService<IThemeService>().Load().Theme;
+        if (_window is MainWindow mainWin) mainWin.ApplyTheme(theme);
+
         _window.Activate();
 
         // If a bootstrap was pending (mid reboot/resume), continue it immediately.

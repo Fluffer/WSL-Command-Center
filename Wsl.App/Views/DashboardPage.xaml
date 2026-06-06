@@ -5,50 +5,113 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:core="using:Wsl.Core">
-    <Grid Padding="24" RowSpacing="12">
+    <Grid Padding="24" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Header -->
         <StackPanel Spacing="4">
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="Distributions" Style="{StaticResource TitleTextBlockStyle}" />
-                <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}" />
+                <Button Command="{x:Bind Vm.RefreshCommand}" ToolTipService.ToolTip="Reload the distro list"
+                        VerticalAlignment="Center">
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE72C;" FontSize="14" />
+                </Button>
                 <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" Width="20" Height="20" />
             </StackPanel>
-            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Text="Installed WSL distributions. Start/Stop control each distro's lightweight VM; Set Default picks which one plain `wsl` opens; Unregister permanently deletes a distro and its files." />
         </StackPanel>
 
-        <muxc:InfoBar Grid.Row="1" IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
-                     Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+        <muxc:InfoBar Grid.Row="1"
+                      IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                      Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
 
-        <ListView Grid.Row="2" ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}">
+        <!-- Empty state -->
+        <StackPanel Grid.Row="2" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="{x:Bind Vm.HasNoDistros, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE7BA;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="No distributions found" Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Install one from the Deploy page." />
+        </StackPanel>
+
+        <!-- Distro cards -->
+        <ListView Grid.Row="2" ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
+                  SelectionMode="None">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0,0,0,8" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="core:Distro">
-                    <Grid ColumnSpacing="16" Padding="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200" />
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="60" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="{x:Bind State}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2" Text="{x:Bind Version}" VerticalAlignment="Center" />
-                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                            <Button Content="Start" Click="Start_Click" Tag="{x:Bind Name}"
-                                    ToolTipService.ToolTip="Boot this distro." />
-                            <Button Content="Stop" Click="Stop_Click" Tag="{x:Bind Name}"
-                                    ToolTipService.ToolTip="Shut the distro down (terminate)." />
-                            <Button Content="Set Default" Click="SetDefault_Click" Tag="{x:Bind Name}"
-                                    ToolTipService.ToolTip="Make this the default distro for `wsl`." />
-                            <Button Content="Unregister" Click="Unregister_Click" Tag="{x:Bind Name}"
-                                    ToolTipService.ToolTip="Permanently delete this distro and its filesystem. Cannot be undone." />
-                        </StackPanel>
-                    </Grid>
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <Border.ChildTransitions>
+                            <TransitionCollection>
+                                <EntranceThemeTransition />
+                            </TransitionCollection>
+                        </Border.ChildTransitions>
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE756;" FontSize="20"
+                                      VerticalAlignment="Center"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind Version}" Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+
+                            <!-- State pill -->
+                            <Border Grid.Column="2" Style="{StaticResource ChipBorderStyle}"
+                                    Background="{x:Bind State, Converter={StaticResource StateToBrush}, ConverterParameter=bg}">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                             Fill="{x:Bind State, Converter={StaticResource StateToBrush}}" />
+                                    <TextBlock Text="{x:Bind State}" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{x:Bind State, Converter={StaticResource StateToBrush}}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actions -->
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Button Click="Start_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Boot this distro.">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE768;" FontSize="14" />
+                                </Button>
+                                <Button Click="Stop_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Shut the distro down (terminate).">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE71A;" FontSize="14" />
+                                </Button>
+                                <Button Click="SetDefault_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Make this the default distro for `wsl`.">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;" FontSize="14" />
+                                </Button>
+                                <Button ToolTipService.ToolTip="More actions">
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE712;" FontSize="14" />
+                                    <Button.Flyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Unregister (delete)…" Click="Unregister_Click" Tag="{x:Bind Name}" />
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.Core;
 using Wsl.Core.Ipc;
+using Wsl.Core.Settings;
 using Wsl.App.Logic.ViewModels;
 
 namespace Wsl.App.Services;
@@ -18,6 +19,7 @@ public static class ServiceRegistration
         services.AddSingleton<WslBackupService>();
         services.AddSingleton<WslConfigService>();
         services.AddSingleton<BootstrapStateStore>();
+        services.AddSingleton<IThemeService, ThemeService>();
 
         // Broker (privileged) — path resolved next to the app exe.
         services.AddSingleton<IPeerVerifier, WindowsPeerVerifier>();

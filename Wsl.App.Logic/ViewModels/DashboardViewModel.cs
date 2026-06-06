@@ -9,12 +9,22 @@ public partial class DashboardViewModel : ObservableObject
 {
     private readonly WslDistroService _distros;
 
-    public DashboardViewModel(WslDistroService distros) => _distros = distros;
+    public DashboardViewModel(WslDistroService distros)
+    {
+        _distros = distros;
+        Distros.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNoDistros));
+    }
 
     public ObservableCollection<Distro> Distros { get; } = new();
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
+
+    /// <summary>True when there are no distros to show and we are not mid-load.
+    /// Drives the empty-state placeholder (via BoolToVisibilityConverter in the view).</summary>
+    public bool HasNoDistros => !IsBusy && Distros.Count == 0;
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(HasNoDistros));
 
     [RelayCommand]
     public async Task RefreshAsync()

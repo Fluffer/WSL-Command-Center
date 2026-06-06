@@ -27,13 +27,15 @@ public sealed partial class DashboardPage : Page
 
     private async void Unregister_Click(object s, RoutedEventArgs e)
     {
-        var name = (string)((Button)s).Tag;
+        // Sender is a MenuFlyoutItem (overflow menu), so cast via FrameworkElement, not Button.
+        if (s is not FrameworkElement { Tag: string name }) return;
         var dialog = new ContentDialog
         {
-            Title = "Unregister distro",
-            Content = $"This permanently deletes '{name}' and its filesystem. Type the name to confirm.",
+            Title = "Unregister distribution?",
+            Content = $"This permanently deletes '{name}' and its entire filesystem. This cannot be undone.",
             PrimaryButtonText = "Unregister",
             CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)

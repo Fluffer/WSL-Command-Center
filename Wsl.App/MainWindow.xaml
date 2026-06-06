@@ -3,19 +3,68 @@
     x:Class="Wsl.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
-    <Grid>
-        <muxc:NavigationView x:Name="Nav"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:media="using:Microsoft.UI.Xaml.Media">
+
+    <Window.SystemBackdrop>
+        <media:MicaBackdrop Kind="Base" />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom titlebar drag region -->
+        <Grid x:Name="AppTitleBar" Height="48" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"
+                        Margin="16,0,0,0">
+                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE756;" FontSize="16" />
+                <TextBlock Text="WSL Command Center" Style="{StaticResource CaptionTextBlockStyle}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <muxc:NavigationView x:Name="Nav" Grid.Row="1"
                              PaneDisplayMode="Left"
                              IsBackButtonVisible="Collapsed"
+                             IsSettingsVisible="False"
                              SelectionChanged="Nav_SelectionChanged">
             <muxc:NavigationView.MenuItems>
-                <muxc:NavigationViewItem Content="Dashboard" Tag="Dashboard" Icon="Home" />
-                <muxc:NavigationViewItem Content="Deploy" Tag="Deploy" Icon="Add" />
-                <muxc:NavigationViewItem Content="Backup" Tag="Backup" Icon="Save" />
-                <muxc:NavigationViewItem Content="Config" Tag="Config" Icon="Setting" />
-                <muxc:NavigationViewItem Content="Setup" Tag="Setup" Icon="Repair" />
+                <muxc:NavigationViewItem Content="Dashboard" Tag="Dashboard">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE80F;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Deploy" Tag="Deploy">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE896;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Backup" Tag="Backup">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE7B8;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Config" Tag="Config">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE713;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Setup" Tag="Setup">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE90F;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
+            <muxc:NavigationView.FooterMenuItems>
+                <muxc:NavigationViewItem Content="Settings" Tag="Settings">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE713;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+            </muxc:NavigationView.FooterMenuItems>
             <Frame x:Name="ContentFrame" />
         </muxc:NavigationView>
     </Grid>

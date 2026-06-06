@@ -7,19 +7,37 @@ namespace Wsl.App;
 
 public sealed partial class MainWindow : Window
 {
-    // Page tasks (17-21) each add one entry, e.g. ["Dashboard"] = typeof(Views.DashboardPage).
     private readonly Dictionary<string, Type> _pages = new();
 
     public MainWindow()
     {
         InitializeComponent();
+
+        // Custom titlebar (no AppWindowTitleBar button-color theming — unreliable unpackaged).
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        AppWindow.Title = "WSL Command Center";
+
         _pages["Dashboard"] = typeof(Views.DashboardPage);
         _pages["Deploy"] = typeof(Views.DeployPage);
         _pages["Backup"] = typeof(Views.BackupPage);
         _pages["Config"] = typeof(Views.ConfigPage);
         _pages["Setup"] = typeof(Views.SetupPage);
+        _pages["Settings"] = typeof(Views.SettingsPage);
+
         Nav.SelectedItem = Nav.MenuItems[0];
         NavigateTo("Dashboard");
+    }
+
+    /// <summary>Applies a persisted theme string ("System"/"Light"/"Dark") to the UI root.</summary>
+    public void ApplyTheme(string theme)
+    {
+        RootGrid.RequestedTheme = theme switch
+        {
+            "Light" => ElementTheme.Light,
+            "Dark" => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
     }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

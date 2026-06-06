@@ -6,7 +6,7 @@
 
 ## Goal
 
-A native Windows 11 desktop app (WinUI 3 / C# .NET 8) that gives one GUI for managing
+A native Windows 11 desktop app (WinUI 3 / C# .NET 9) that gives one GUI for managing
 WSL end-to-end: first-time install (bootstrap), distro lifecycle, deploying new distros,
 manual backup/restore, and editing WSL config.
 
@@ -42,8 +42,8 @@ and the broker consume it (the broker uses only a thin slice).
 
 ```
 WslCommandCenter.sln
-├─ Wsl.Core           (class lib, net8.0)      ← all WSL logic, no UI, fully testable
-├─ Wsl.Contracts      (class lib, net8.0)      ← shared IPC DTOs (broker + app reference this)
+├─ Wsl.Core           (class lib, net9.0)      ← all WSL logic, no UI, fully testable
+├─ Wsl.Contracts      (class lib, net9.0)      ← shared IPC DTOs (broker + app reference this)
 ├─ Wsl.Broker         (console exe, elevated)  ← privileged ops only, named-pipe server
 ├─ Wsl.App            (WinUI 3, non-elevated)  ← UI, named-pipe client
 └─ Wsl.Core.Tests     (xUnit)                  ← unit tests for Core + Contracts
@@ -301,7 +301,7 @@ The UTF-16LE fixtures are the backbone of parser reliability.
 
 ## Tech stack
 
-- WinUI 3, .NET 8, C#
+- WinUI 3, .NET 9, C#
 - `CommunityToolkit.Mvvm`, `Microsoft.Extensions.DependencyInjection`
 - `System.Text.Json` (source-gen) for IPC
 - xUnit for tests

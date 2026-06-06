@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.BackupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="700" HorizontalAlignment="Left">
+            <TextBlock Text="Backup &amp; restore" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
+
+            <TextBlock Text="Export" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBox Header="Distro" Text="{x:Bind Vm.ExportDistro, Mode=TwoWay}" Width="320" />
+            <ComboBox Header="Format" ItemsSource="{x:Bind Vm.Formats}"
+                      SelectedItem="{x:Bind Vm.ExportFormat, Mode=TwoWay}" Width="160" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Header="Output path" Text="{x:Bind Vm.ExportPath, Mode=TwoWay}" Width="280" />
+                <Button Content="Browse…" Click="BrowseExport_Click" VerticalAlignment="Bottom" />
+            </StackPanel>
+            <Button Content="Export" Command="{x:Bind Vm.ExportCommand}" />
+
+            <TextBlock Text="Restore" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBox Header="New name" Text="{x:Bind Vm.RestoreName, Mode=TwoWay}" Width="320" />
+            <TextBox Header="Install directory" Text="{x:Bind Vm.RestoreInstallDir, Mode=TwoWay}" Width="320" />
+            <ComboBox Header="Source format" ItemsSource="{x:Bind Vm.Formats}"
+                      SelectedItem="{x:Bind Vm.RestoreFormat, Mode=TwoWay}" Width="160" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Header="Archive" Text="{x:Bind Vm.RestoreArchivePath, Mode=TwoWay}" Width="280" />
+                <Button Content="Browse…" Click="BrowseRestore_Click" VerticalAlignment="Bottom" />
+            </StackPanel>
+            <Button Content="Restore" Command="{x:Bind Vm.RestoreCommand}" />
+
+            <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

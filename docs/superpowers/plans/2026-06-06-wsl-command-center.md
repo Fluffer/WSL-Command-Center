@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A native WinUI 3 / .NET 8 desktop app to manage WSL end-to-end — bootstrap install, distro lifecycle, deploy, manual backup/restore, config editing — using a least-privilege elevated broker.
+**Goal:** A native WinUI 3 / .NET 9 desktop app to manage WSL end-to-end — bootstrap install, distro lifecycle, deploy, manual backup/restore, config editing — using a least-privilege elevated broker.
 
 **Architecture:** UI-free `Wsl.Core` library wraps `wsl.exe` behind `IProcessRunner` (testable with UTF-16LE fixtures). Non-elevated WinUI 3 app calls Core directly for unprivileged ops; a separately-elevated broker process handles the few privileged ops over a mutually-authenticated named pipe. Shared IPC DTOs live in a tiny `Wsl.Contracts` assembly so the broker stays lean.
 
-**Tech Stack:** WinUI 3, .NET 8, C#, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, System.Text.Json (source-gen), xUnit, System.IO.Pipes.
+**Tech Stack:** WinUI 3, .NET 9, C#, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, System.Text.Json (source-gen), xUnit, System.IO.Pipes.
 
 **Spec:** `docs/superpowers/specs/2026-06-06-wsl-command-center-design.md`
 
@@ -48,9 +48,9 @@ Run:
 
 ```powershell
 dotnet new sln -n WslCommandCenter
-dotnet new classlib -n Wsl.Core -f net8.0 -o Wsl.Core
-dotnet new classlib -n Wsl.Contracts -f net8.0 -o Wsl.Contracts
-dotnet new xunit -n Wsl.Core.Tests -f net8.0 -o Wsl.Core.Tests
+dotnet new classlib -n Wsl.Core -f net9.0 -o Wsl.Core
+dotnet new classlib -n Wsl.Contracts -f net9.0 -o Wsl.Contracts
+dotnet new xunit -n Wsl.Core.Tests -f net9.0 -o Wsl.Core.Tests
 del Wsl.Core\Class1.cs
 del Wsl.Contracts\Class1.cs
 dotnet sln add Wsl.Core Wsl.Contracts Wsl.Core.Tests
@@ -1817,7 +1817,7 @@ untestable.
 Run:
 
 ```powershell
-dotnet new console -n Wsl.Broker -f net8.0 -o Wsl.Broker
+dotnet new console -n Wsl.Broker -f net9.0 -o Wsl.Broker
 dotnet sln add Wsl.Broker
 dotnet add Wsl.Broker reference Wsl.Contracts Wsl.Core
 dotnet add Wsl.Core.Tests reference Wsl.Broker
@@ -2676,7 +2676,7 @@ broker client). UI/XAML is verified by manual smoke run.
 
 - [ ] **Step 1: Create the WinUI 3 project AND the ViewModel logic library**
 
-The ViewModels live in a plain `net8.0` class library (`Wsl.App.Logic`) so the xUnit project can
+The ViewModels live in a plain `net9.0` class library (`Wsl.App.Logic`) so the xUnit project can
 reference them without referencing the WinUI exe. Create **both** projects now — `Wsl.App.Logic`
 must exist before `ServiceRegistration` (in this task) imports its namespace, otherwise the build
 breaks. (This is the ordering fix: do not defer the logic lib to a later task.)
@@ -2685,7 +2685,7 @@ Run:
 
 ```powershell
 dotnet new winui3 -n Wsl.App -o Wsl.App
-dotnet new classlib -n Wsl.App.Logic -f net8.0 -o Wsl.App.Logic
+dotnet new classlib -n Wsl.App.Logic -f net9.0 -o Wsl.App.Logic
 del Wsl.App.Logic\Class1.cs
 dotnet sln add Wsl.App Wsl.App.Logic
 dotnet add Wsl.App.Logic reference Wsl.Core Wsl.Contracts
@@ -2696,10 +2696,12 @@ dotnet add Wsl.App package Microsoft.Extensions.DependencyInjection
 dotnet add Wsl.Core.Tests reference Wsl.App.Logic
 ```
 
-(If `winui3` template is missing: `dotnet new install Microsoft.WindowsAppSDK.ProjectTemplates`,
-then re-run. Ensure the app csproj has `<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>`
-and `<UseWinUI>true</UseWinUI>`. CommunityToolkit.Mvvm source generators work in a plain `net8.0`
-library — no WinUI dependency needed.)
+(The `winui3` template comes from the `Microsoft.WindowsAppSDK.WinUI.CSharp.Templates` NuGet
+package — already installed on this machine. It scaffolds an app targeting
+`net9.0-windows10.0.26100.0` with `<UseWinUI>true</UseWinUI>` and `Microsoft.WindowsAppSDK` 2.1.x;
+**leave that generated TFM as-is** — do not downgrade it to 19041. Verified building CLI-only with
+no Visual Studio. CommunityToolkit.Mvvm source generators work in a plain `net9.0` library — no
+WinUI dependency needed.)
 
 - [ ] **Step 2: Register services**
 
@@ -4285,7 +4287,7 @@ be run manually on a developer machine that has WSL.
 Run:
 
 ```powershell
-dotnet new xunit -n Wsl.Live.Tests -f net8.0 -o Wsl.Live.Tests
+dotnet new xunit -n Wsl.Live.Tests -f net9.0 -o Wsl.Live.Tests
 dotnet sln add Wsl.Live.Tests
 dotnet add Wsl.Live.Tests reference Wsl.Core
 ```

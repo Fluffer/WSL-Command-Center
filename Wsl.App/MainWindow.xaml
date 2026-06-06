@@ -20,7 +20,7 @@
         <Grid x:Name="AppTitleBar" Height="48" Background="Transparent">
             <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"
                         Margin="16,0,0,0">
-                <Image Source="ms-appx:///Assets/ClaudeLogo.png" Width="20" Height="20"
+                <Image Source="ms-appx:///Assets/WslLogo.png" Width="20" Height="20"
                        VerticalAlignment="Center" />
                 <TextBlock Text="WSL Command Center" Style="{StaticResource CaptionTextBlockStyle}"
                            VerticalAlignment="Center" />

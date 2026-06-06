@@ -32,7 +32,7 @@ public static class ServiceRegistration
         services.AddTransient<DeployViewModel>();          // Task 18
         services.AddTransient<BackupViewModel>();          // Task 19
         services.AddTransient<ConfigViewModel>();          // Task 20
-        //   services.AddTransient<SetupViewModel>();       // Task 21
+        services.AddTransient<SetupViewModel>();           // Task 21
 
         return services.BuildServiceProvider();
     }

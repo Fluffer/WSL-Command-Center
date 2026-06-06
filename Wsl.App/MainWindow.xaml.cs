@@ -51,8 +51,10 @@ public sealed partial class MainWindow : Window
         if (pal is not null)
         {
             // Solid palette background; Mica would tint it with the desktop wallpaper.
+            // The dark theme's translucent pane/card/text layers compose over this color,
+            // so the whole app takes the palette tint without any brush overrides.
             SystemBackdrop = null;
-            RootGrid.Background = new SolidColorBrush(pal.Pane);
+            RootGrid.Background = new SolidColorBrush(pal.Background);
             RootGrid.RequestedTheme = ElementTheme.Dark;   // all palettes are dark-based
         }
         else
@@ -70,12 +72,18 @@ public sealed partial class MainWindow : Window
         if (rebuild)
         {
             // Force {ThemeResource} consumers (theme, font, accent buttons) to re-resolve.
-            // NOTE: do NOT re-navigate the current page — that would destroy the Settings page
-            // mid-interaction and make the selectors appear to do nothing. Pages that bind via
-            // {StaticResource} simply pick up the new resources the next time they're navigated to.
             var t = RootGrid.RequestedTheme;
             RootGrid.RequestedTheme = t == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
             RootGrid.RequestedTheme = t;
+
+            // Controls capture card/text brushes at construction (StaticResource semantics), so a
+            // palette change leaves the visible page half-recolored. Re-create the current page —
+            // DEFERRED via the dispatcher, never synchronously: a synchronous re-navigate inside a
+            // SelectionChanged handler destroys the combo mid-event and the selectors appear dead
+            // (the b909c51 regression). The page reconstructs from the just-saved settings.
+            var cur = ContentFrame.CurrentSourcePageType;
+            if (cur is not null)
+                DispatcherQueue.TryEnqueue(() => ContentFrame.Navigate(cur));
         }
     }
 

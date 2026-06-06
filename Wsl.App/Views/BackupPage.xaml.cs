@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using Wsl.App.Logic.ViewModels;
+using Wsl.Core.Scripting;
 using WinRT.Interop;
 
 namespace Wsl.App.Views;
@@ -11,12 +12,29 @@ namespace Wsl.App.Views;
 public sealed partial class BackupPage : Page
 {
     public BackupViewModel Vm { get; }
+    private readonly IPowerShellExporter _ps;
 
     public BackupPage()
     {
         Vm = App.Services.GetRequiredService<BackupViewModel>();
+        _ps = App.Services.GetRequiredService<IPowerShellExporter>();
         InitializeComponent();
         _ = Vm.LoadDistrosAsync();
+    }
+
+    private void CopyExportPs_Click(object s, RoutedEventArgs e)
+    {
+        var cmd = _ps.Export(Vm.ExportDistro, Vm.ExportPath, Vm.ExportFormat);
+        ClipboardHelper.CopyText(cmd);
+        Vm.StatusMessage = "Copied export command to clipboard.";
+    }
+
+    private void CopyRestorePs_Click(object s, RoutedEventArgs e)
+    {
+        var cmd = _ps.Restore(Vm.RestoreName, Vm.RestoreInstallDir, Vm.RestoreArchivePath,
+                              Vm.RestoreFormat, Vm.RestoreVersion);
+        ClipboardHelper.CopyText(cmd);
+        Vm.StatusMessage = "Copied restore command to clipboard.";
     }
 
     private async void BrowseExport_Click(object s, RoutedEventArgs e)

@@ -27,9 +27,12 @@
                        Text="Installed WSL distributions. Start/Stop control each distro's lightweight VM; Set Default picks which one plain `wsl` opens; Unregister permanently deletes a distro and its files." />
         </StackPanel>
 
-        <muxc:InfoBar Grid.Row="1"
-                      IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
-                      Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+        <StackPanel Grid.Row="1" Spacing="8">
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar x:Name="CopiedBar" Severity="Success" IsClosable="True"
+                          Title="Copied to clipboard" />
+        </StackPanel>
 
         <!-- Empty state -->
         <StackPanel Grid.Row="2" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center"
@@ -105,6 +108,13 @@
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE712;" FontSize="14" />
                                     <Button.Flyout>
                                         <MenuFlyout>
+                                            <MenuFlyoutSubItem Text="Copy PowerShell command">
+                                                <MenuFlyoutItem Text="Start" Click="CopyStart_Click" Tag="{x:Bind Name}" />
+                                                <MenuFlyoutItem Text="Stop (terminate)" Click="CopyStop_Click" Tag="{x:Bind Name}" />
+                                                <MenuFlyoutItem Text="Set default" Click="CopySetDefault_Click" Tag="{x:Bind Name}" />
+                                                <MenuFlyoutItem Text="Unregister" Click="CopyUnregister_Click" Tag="{x:Bind Name}" />
+                                            </MenuFlyoutSubItem>
+                                            <MenuFlyoutSeparator />
                                             <MenuFlyoutItem Text="Unregister (delete)…" Click="Unregister_Click" Tag="{x:Bind Name}" />
                                         </MenuFlyout>
                                     </Button.Flyout>

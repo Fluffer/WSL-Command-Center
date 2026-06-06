@@ -2,19 +2,36 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.App.Logic.ViewModels;
+using Wsl.Core.Scripting;
 
 namespace Wsl.App.Views;
 
 public sealed partial class DashboardPage : Page
 {
     public DashboardViewModel Vm { get; }
+    private readonly IPowerShellExporter _ps;
 
     public DashboardPage()
     {
         Vm = App.Services.GetRequiredService<DashboardViewModel>();
+        _ps = App.Services.GetRequiredService<IPowerShellExporter>();
         InitializeComponent();
         _ = Vm.RefreshAsync();
     }
+
+    private static string Name(object sender) => (sender as FrameworkElement)?.Tag as string ?? "";
+
+    private void CopyCommand(string cmd)
+    {
+        ClipboardHelper.CopyText(cmd);
+        CopiedBar.Message = cmd;
+        CopiedBar.IsOpen = true;
+    }
+
+    private void CopyStart_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Start(Name(s)));
+    private void CopyStop_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Terminate(Name(s)));
+    private void CopySetDefault_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.SetDefault(Name(s)));
+    private void CopyUnregister_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Unregister(Name(s)));
 
     private async void Start_Click(object s, RoutedEventArgs e)
         => await Vm.StartAsync((string)((Button)s).Tag);

@@ -1,0 +1,36 @@
+namespace Wsl.Core.Scripting;
+
+/// <summary>
+/// Generates copy-pasteable wsl.exe command lines that mirror exactly what the
+/// app's services run. Used for the "Copy PowerShell" / command-preview feature.
+/// Argument values containing whitespace (or empty) are double-quoted.
+/// </summary>
+public sealed class PowerShellExporter : IPowerShellExporter
+{
+    public string Export(string name, string outPath, ExportFormat fmt) =>
+        $"wsl.exe --export {Q(name)} {Q(outPath)} --format {FormatFlag(fmt)}";
+
+    public string Restore(string name, string installDir, string archivePath, ExportFormat sourceFmt, int version) =>
+        sourceFmt == ExportFormat.Vhd
+            ? $"wsl.exe --import {Q(name)} {Q(installDir)} {Q(archivePath)} --vhd --version {version}"
+            : $"wsl.exe --import {Q(name)} {Q(installDir)} {Q(archivePath)} --version {version}";
+
+    public string Start(string name) => $"wsl.exe -d {Q(name)} -- true";
+    public string Terminate(string name) => $"wsl.exe --terminate {Q(name)}";
+    public string SetDefault(string name) => $"wsl.exe --set-default {Q(name)}";
+    public string SetVersion(string name, int version) => $"wsl.exe --set-version {Q(name)} {version}";
+    public string Unregister(string name) => $"wsl.exe --unregister {Q(name)}";
+    public string List() => "wsl.exe --list --verbose";
+
+    private static string FormatFlag(ExportFormat fmt) => fmt switch
+    {
+        ExportFormat.Tar => "tar",
+        ExportFormat.TarGz => "tar.gz",
+        ExportFormat.Vhd => "vhd",
+        _ => throw new ArgumentOutOfRangeException(nameof(fmt))
+    };
+
+    /// <summary>Quote an argument value if it is empty or contains whitespace.</summary>
+    private static string Q(string s) =>
+        string.IsNullOrEmpty(s) || s.Any(char.IsWhiteSpace) ? $"\"{s}\"" : s;
+}

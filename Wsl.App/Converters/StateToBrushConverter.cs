@@ -11,7 +11,8 @@ public sealed class StateToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        var running = string.Equals(value as string, "Running", StringComparison.OrdinalIgnoreCase);
+        // value is a DistroState enum (boxed) or a string; compare by name.
+        var running = string.Equals(value?.ToString(), "Running", StringComparison.OrdinalIgnoreCase);
         var bg = string.Equals(parameter as string, "bg", StringComparison.OrdinalIgnoreCase);
         var key = (running, bg) switch
         {

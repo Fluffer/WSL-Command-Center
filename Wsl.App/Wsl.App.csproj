@@ -72,7 +72,10 @@
        Using a Target + MSBuild task instead of ProjectReference to avoid NETSDK1150 (self-contained
        app cannot ProjectReference a framework-dependent exe). -->
   <Target Name="BuildAndCopyBroker" BeforeTargets="Build">
-    <MSBuild Projects="..\Wsl.Broker\Wsl.Broker.csproj" Properties="Configuration=$(Configuration)" Targets="Build" />
+    <!-- RemoveProperties strips the app's RID/platform globals: the broker is a plain
+         framework-dependent net9.0 exe and is not restored for RID-specific targets.
+         (Publish.ps1 separately publishes the broker self-contained for deployment zips.) -->
+    <MSBuild Projects="..\Wsl.Broker\Wsl.Broker.csproj" Properties="Configuration=$(Configuration)" RemoveProperties="RuntimeIdentifier;Platform;PlatformTarget;SelfContained;WindowsAppSDKSelfContained;PublishReadyToRun;PublishTrimmed" Targets="Build" />
     <PropertyGroup>
       <_BrokerBinDir>..\Wsl.Broker\bin\$(Configuration)\net9.0\</_BrokerBinDir>
     </PropertyGroup>
@@ -95,7 +98,9 @@
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <!-- Trimming is OFF even for Release: a trimmed publish starts but never shows a window —
+         XAML/WinRT resolve types reflectively (IL2026/IL2104 warnings) and the trimmer cuts them.
+         Verified broken 2026-06-07; re-test with a real smoke run before ever re-enabling. -->
+    <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
 </Project>

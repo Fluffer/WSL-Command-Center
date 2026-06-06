@@ -28,7 +28,7 @@
 
                     <ComboBox Header="Distro" ItemsSource="{x:Bind Vm.Catalog, Mode=OneWay}"
                               SelectedItem="{x:Bind Vm.SelectedCatalogEntry, Mode=TwoWay}"
-                              DisplayMemberPath="FriendlyName" Width="320" />
+                              DisplayMemberPath="FriendlyName" Width="320" HorizontalAlignment="Left" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
@@ -48,7 +48,7 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Text="Create a distribution from an existing image file. Use this to restore a backup, move a distro to another machine, or import a custom Linux image. No internet needed." />
 
-                    <TextBox Header="Name" Text="{x:Bind Vm.ImportName, Mode=TwoWay}" Width="320" />
+                    <TextBox Header="Name" Text="{x:Bind Vm.ImportName, Mode=TwoWay}" Width="320" HorizontalAlignment="Left" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"

@@ -30,6 +30,15 @@ public sealed partial class BackupPage : Page
         if (file is not null) Vm.ExportPath = file.Path;
     }
 
+    private async void BrowseRestoreDir_Click(object s, RoutedEventArgs e)
+    {
+        var picker = new FolderPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+        picker.FileTypeFilter.Add("*");
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder is not null) Vm.RestoreInstallDir = folder.Path;
+    }
+
     private async void BrowseRestore_Click(object s, RoutedEventArgs e)
     {
         var picker = new FileOpenPicker();

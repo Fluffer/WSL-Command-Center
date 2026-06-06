@@ -19,15 +19,15 @@
                         <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    Text="Settings in ~/.wslconfig apply to all WSL2 distros. After saving, run `wsl --shutdown` (button below) for changes to take effect." />
                         <Button Content="Load" Command="{x:Bind Vm.LoadGlobalCommand}" />
-                        <TextBox Header="Memory (e.g. 8GB)" Text="{x:Bind Vm.Memory, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Memory (e.g. 8GB)" Text="{x:Bind Vm.Memory, Mode=TwoWay}" Width="240" HorizontalAlignment="Left" />
                         <TextBlock Text="{x:Bind Vm.MemoryDefaultHint}" Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
-                        <TextBox Header="Processors" Text="{x:Bind Vm.Processors, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Processors" Text="{x:Bind Vm.Processors, Mode=TwoWay}" Width="240" HorizontalAlignment="Left" />
                         <TextBlock Text="{x:Bind Vm.ProcessorsDefaultHint}" Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left" />
-                        <ComboBox Header="Networking mode" Width="240" IsEditable="True"
+                        <ComboBox Header="Networking mode" Width="240" IsEditable="True" HorizontalAlignment="Left"
                                   ItemsSource="{x:Bind Vm.NetworkingModes}"
                                   Text="{x:Bind Vm.Networking, Mode=TwoWay}" />
                         <TextBlock Text="Empty = NAT (the WSL2 default). 'mirrored' shares the Windows network stack." Style="{StaticResource CaptionTextBlockStyle}"
@@ -49,7 +49,7 @@
                             <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" VerticalAlignment="Bottom" />
                         </StackPanel>
                         <Button Content="Load" Command="{x:Bind Vm.LoadDistroCommand}" />
-                        <TextBox Header="Default user" Text="{x:Bind Vm.DefaultUser, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Default user" Text="{x:Bind Vm.DefaultUser, Mode=TwoWay}" Width="240" HorizontalAlignment="Left" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
                                    Text="The Linux user this distro logs in as by default." />
@@ -57,7 +57,7 @@
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
                                    Text="Enable the systemd init system (required by some software like snap or systemd services)." />
-                        <TextBox Header="Hostname" Text="{x:Bind Vm.Hostname, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Hostname" Text="{x:Bind Vm.Hostname, Mode=TwoWay}" Width="240" HorizontalAlignment="Left" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
                                    Text="Hostname shown inside the distro." />

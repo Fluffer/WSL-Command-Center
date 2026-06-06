@@ -16,7 +16,7 @@ public class DashboardViewModelTests
     {
         var runner = new FakeProcessRunner();
         runner.Enqueue(0, ListOutput);
-        var vm = new DashboardViewModel(new WslDistroService(runner));
+        var vm = new DashboardViewModel(new WslDistroService(runner), new WslDiskService(runner));
 
         await vm.RefreshAsync();
 
@@ -29,7 +29,7 @@ public class DashboardViewModelTests
     {
         var runner = new FakeProcessRunner();
         runner.Enqueue(1, "", "The Windows Subsystem for Linux is not installed.");
-        var vm = new DashboardViewModel(new WslDistroService(runner));
+        var vm = new DashboardViewModel(new WslDistroService(runner), new WslDiskService(runner));
 
         await vm.RefreshAsync();
 
@@ -43,7 +43,7 @@ public class DashboardViewModelTests
         var runner = new FakeProcessRunner();
         runner.Enqueue(0, "");          // terminate
         runner.Enqueue(0, ListOutput);  // refresh
-        var vm = new DashboardViewModel(new WslDistroService(runner));
+        var vm = new DashboardViewModel(new WslDistroService(runner), new WslDiskService(runner));
 
         await vm.TerminateAsync("Debian");
 

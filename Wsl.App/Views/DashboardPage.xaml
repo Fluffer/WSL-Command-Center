@@ -108,10 +108,16 @@
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE712;" FontSize="14" />
                                     <Button.Flyout>
                                         <MenuFlyout>
+                                            <MenuFlyoutItem Text="Optimize disk (reclaim space)…" Click="Optimize_Click" Tag="{x:Bind Name}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
                                             <MenuFlyoutSubItem Text="Copy PowerShell command">
                                                 <MenuFlyoutItem Text="Start" Click="CopyStart_Click" Tag="{x:Bind Name}" />
                                                 <MenuFlyoutItem Text="Stop (terminate)" Click="CopyStop_Click" Tag="{x:Bind Name}" />
                                                 <MenuFlyoutItem Text="Set default" Click="CopySetDefault_Click" Tag="{x:Bind Name}" />
+                                                <MenuFlyoutItem Text="Optimize disk" Click="CopyOptimize_Click" Tag="{x:Bind Name}" />
                                                 <MenuFlyoutItem Text="Unregister" Click="CopyUnregister_Click" Tag="{x:Bind Name}" />
                                             </MenuFlyoutSubItem>
                                             <MenuFlyoutSeparator />

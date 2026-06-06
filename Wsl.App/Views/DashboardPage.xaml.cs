@@ -31,7 +31,26 @@ public sealed partial class DashboardPage : Page
     private void CopyStart_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Start(Name(s)));
     private void CopyStop_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Terminate(Name(s)));
     private void CopySetDefault_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.SetDefault(Name(s)));
+    private void CopyOptimize_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Optimize(Name(s)));
     private void CopyUnregister_Click(object s, RoutedEventArgs e) => CopyCommand(_ps.Unregister(Name(s)));
+
+    private async void Optimize_Click(object s, RoutedEventArgs e)
+    {
+        if (s is not FrameworkElement { Tag: string name }) return;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Optimize disk?",
+            Content = $"This shuts down '{name}', then marks its virtual disk sparse so Windows " +
+                      "can reclaim space freed inside the distro. Any unsaved work in the running " +
+                      "distro will be lost. Continue?",
+            PrimaryButtonText = "Optimize",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            await Vm.OptimizeAsync(name);
+    }
 
     private async void Start_Click(object s, RoutedEventArgs e)
         => await Vm.StartAsync((string)((Button)s).Tag);

@@ -22,6 +22,9 @@ public sealed class PowerShellExporter : IPowerShellExporter
     public string Unregister(string name) => $"wsl.exe --unregister {Q(name)}";
     public string List() => "wsl.exe --list --verbose";
 
+    public string Optimize(string name) =>
+        $"wsl.exe --terminate {Q(name)}\r\nwsl.exe --manage {Q(name)} --set-sparse true";
+
     private static string FormatFlag(ExportFormat fmt) => fmt switch
     {
         ExportFormat.Tar => "tar",

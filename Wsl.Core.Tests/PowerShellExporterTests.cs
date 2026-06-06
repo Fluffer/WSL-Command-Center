@@ -47,4 +47,9 @@ public class PowerShellExporterTests
     [Fact]
     public void List_Command()
         => Assert.Equal("wsl.exe --list --verbose", _x.List());
+
+    [Fact]
+    public void Optimize_TerminateThenSetSparse()
+        => Assert.Equal("wsl.exe --terminate Ubuntu\r\nwsl.exe --manage Ubuntu --set-sparse true",
+            _x.Optimize("Ubuntu"));
 }

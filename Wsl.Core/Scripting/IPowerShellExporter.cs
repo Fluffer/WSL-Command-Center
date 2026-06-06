@@ -11,4 +11,5 @@ public interface IPowerShellExporter
     string SetVersion(string name, int version);
     string Unregister(string name);
     string List();
+    string Optimize(string name);
 }

@@ -8,10 +8,12 @@ namespace Wsl.App.Logic.ViewModels;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly WslDistroService _distros;
+    private readonly WslDiskService _disk;
 
-    public DashboardViewModel(WslDistroService distros)
+    public DashboardViewModel(WslDistroService distros, WslDiskService disk)
     {
         _distros = distros;
+        _disk = disk;
         Distros.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNoDistros));
     }
 
@@ -58,6 +60,9 @@ public partial class DashboardViewModel : ObservableObject
 
     [RelayCommand]
     public Task UnregisterAsync(string name) => ActionThenRefresh(() => _distros.UnregisterAsync(name));
+
+    [RelayCommand]
+    public Task OptimizeAsync(string name) => ActionThenRefresh(() => _disk.OptimizeAsync(name));
 
     private async Task ActionThenRefresh(Func<Task> action)
     {

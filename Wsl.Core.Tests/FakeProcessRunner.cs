@@ -25,4 +25,13 @@ public sealed class FakeProcessRunner : IProcessRunner
         var result = _results.Count > 0 ? _results.Dequeue() : new ProcessResult(0, "", "");
         return Task.FromResult(result);
     }
+
+    public string? LastStdin { get; private set; }
+
+    public Task<ProcessResult> RunWithInputAsync(
+        string exe, string[] args, string stdin, TimeSpan? timeout = null, CancellationToken ct = default)
+    {
+        LastStdin = stdin;
+        return RunAsync(exe, args, timeout, ct);
+    }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Wsl.App.Services;
 
@@ -11,11 +12,16 @@ public partial class App : Application
 
     public App() => InitializeComponent();
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         Services = ServiceRegistration.Build();
         _window = new MainWindow();
         MainWindowHandleHost = _window;
         _window.Activate();
+
+        // If a bootstrap was pending (mid reboot/resume), continue it immediately.
+        var state = Services.GetRequiredService<Wsl.Core.BootstrapStateStore>();
+        if (await state.ReadAsync() != Wsl.Core.BootstrapStep.Done && _window is MainWindow mw)
+            mw.NavigateToSetup();
     }
 }

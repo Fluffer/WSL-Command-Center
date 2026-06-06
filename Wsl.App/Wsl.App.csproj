@@ -61,6 +61,24 @@
     <ProjectReference Include="..\Wsl.App.Logic\Wsl.App.Logic.csproj" />
   </ItemGroup>
 
+  <!-- Copy broker exe next to the app so BrokerClient can find it via AppContext.BaseDirectory.
+       Using a Target + MSBuild task instead of ProjectReference to avoid NETSDK1150 (self-contained
+       app cannot ProjectReference a framework-dependent exe). -->
+  <Target Name="BuildAndCopyBroker" BeforeTargets="Build">
+    <MSBuild Projects="..\Wsl.Broker\Wsl.Broker.csproj"
+             Properties="Configuration=$(Configuration)"
+             Targets="Build" />
+    <PropertyGroup>
+      <_BrokerBinDir>..\Wsl.Broker\bin\$(Configuration)\net9.0\</_BrokerBinDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BrokerFiles Include="$(_BrokerBinDir)Wsl.Broker.exe" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_BrokerFiles)"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
   <!--
     Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
     Explorer "Package and Publish" context menu entry to be enabled for this project even if

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.ConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="700" HorizontalAlignment="Left">
+            <TextBlock Text="Configuration" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Informational" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
+
+            <muxc:Pivot>
+                <muxc:PivotItem Header="Global (.wslconfig)">
+                    <StackPanel Spacing="12" Margin="0,12,0,0">
+                        <Button Content="Load" Command="{x:Bind Vm.LoadGlobalCommand}" />
+                        <TextBox Header="Memory (e.g. 8GB)" Text="{x:Bind Vm.Memory, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Processors" Text="{x:Bind Vm.Processors, Mode=TwoWay}" Width="240" />
+                        <TextBox Header="Networking mode" Text="{x:Bind Vm.Networking, Mode=TwoWay}" Width="240" />
+                        <ToggleSwitch Header="Localhost forwarding" IsOn="{x:Bind Vm.LocalhostForwarding, Mode=TwoWay}" />
+                        <Button Content="Save" Command="{x:Bind Vm.SaveGlobalCommand}" />
+                    </StackPanel>
+                </muxc:PivotItem>
+                <muxc:PivotItem Header="Per-distro (wsl.conf)">
+                    <StackPanel Spacing="12" Margin="0,12,0,0">
+                        <TextBox Header="Distro" Text="{x:Bind Vm.SelectedDistro, Mode=TwoWay}" Width="240" />
+                        <Button Content="Load" Command="{x:Bind Vm.LoadDistroCommand}" />
+                        <TextBox Header="Default user" Text="{x:Bind Vm.DefaultUser, Mode=TwoWay}" Width="240" />
+                        <ToggleSwitch Header="systemd" IsOn="{x:Bind Vm.Systemd, Mode=TwoWay}" />
+                        <TextBox Header="Hostname" Text="{x:Bind Vm.Hostname, Mode=TwoWay}" Width="240" />
+                        <Button Content="Save" Command="{x:Bind Vm.SaveDistroCommand}" />
+                    </StackPanel>
+                </muxc:PivotItem>
+            </muxc:Pivot>
+
+            <Button Content="Shutdown WSL now" Click="Shutdown_Click" />
+            <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

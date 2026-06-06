@@ -12,10 +12,14 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" Spacing="12">
-            <TextBlock Text="Distributions" Style="{StaticResource TitleTextBlockStyle}" />
-            <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}" />
-            <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" Width="20" Height="20" />
+        <StackPanel Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Distributions" Style="{StaticResource TitleTextBlockStyle}" />
+                <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}" />
+                <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" Width="20" Height="20" />
+            </StackPanel>
+            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Installed WSL distributions. Start/Stop control each distro's lightweight VM; Set Default picks which one plain `wsl` opens; Unregister permanently deletes a distro and its files." />
         </StackPanel>
 
         <muxc:InfoBar Grid.Row="1" IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
@@ -35,10 +39,14 @@
                         <TextBlock Grid.Column="1" Text="{x:Bind State}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="{x:Bind Version}" VerticalAlignment="Center" />
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                            <Button Content="Start" Click="Start_Click" Tag="{x:Bind Name}" />
-                            <Button Content="Stop" Click="Stop_Click" Tag="{x:Bind Name}" />
-                            <Button Content="Set Default" Click="SetDefault_Click" Tag="{x:Bind Name}" />
-                            <Button Content="Unregister" Click="Unregister_Click" Tag="{x:Bind Name}" />
+                            <Button Content="Start" Click="Start_Click" Tag="{x:Bind Name}"
+                                    ToolTipService.ToolTip="Boot this distro." />
+                            <Button Content="Stop" Click="Stop_Click" Tag="{x:Bind Name}"
+                                    ToolTipService.ToolTip="Shut the distro down (terminate)." />
+                            <Button Content="Set Default" Click="SetDefault_Click" Tag="{x:Bind Name}"
+                                    ToolTipService.ToolTip="Make this the default distro for `wsl`." />
+                            <Button Content="Unregister" Click="Unregister_Click" Tag="{x:Bind Name}"
+                                    ToolTipService.ToolTip="Permanently delete this distro and its filesystem. Cannot be undone." />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>

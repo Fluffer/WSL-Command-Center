@@ -13,31 +13,67 @@
             <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                          Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
 
-            <TextBlock Text="Export" Style="{StaticResource SubtitleTextBlockStyle}" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <ComboBox Header="Distro" Width="240"
-                          ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
-                          SelectedItem="{x:Bind Vm.ExportDistro, Mode=TwoWay}" />
-                <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" VerticalAlignment="Bottom" />
-            </StackPanel>
-            <ComboBox Header="Format" ItemsSource="{x:Bind Vm.Formats}"
-                      SelectedItem="{x:Bind Vm.ExportFormat, Mode=TwoWay}" Width="160" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Header="Output path" Text="{x:Bind Vm.ExportPath, Mode=TwoWay}" Width="280" />
-                <Button Content="Browse…" Click="BrowseExport_Click" VerticalAlignment="Bottom" />
-            </StackPanel>
-            <Button Content="Export" Command="{x:Bind Vm.ExportCommand}" />
+            <!-- ===== Export ===== -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Export" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Save a distribution to a single archive file you can store or copy elsewhere. The distro keeps working normally during export." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox Header="Distro" Width="240"
+                                  ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
+                                  SelectedItem="{x:Bind Vm.ExportDistro, Mode=TwoWay}" />
+                        <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                    <ComboBox Header="Format" ItemsSource="{x:Bind Vm.Formats}"
+                              SelectedItem="{x:Bind Vm.ExportFormat, Mode=TwoWay}" Width="160" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="tar = portable Linux filesystem (most compatible). tar.gz = compressed tar (smaller file, slower). vhd = WSL2 virtual disk (fast to re-import, larger file)." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Header="Output path" Text="{x:Bind Vm.ExportPath, Mode=TwoWay}" Width="280" />
+                        <Button Content="Browse…" Click="BrowseExport_Click" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Where to write the archive file." />
+                    <Button Content="Export" Command="{x:Bind Vm.ExportCommand}" />
+                </StackPanel>
+            </Border>
 
-            <TextBlock Text="Restore" Style="{StaticResource SubtitleTextBlockStyle}" />
-            <TextBox Header="New name" Text="{x:Bind Vm.RestoreName, Mode=TwoWay}" Width="320" />
-            <TextBox Header="Install directory" Text="{x:Bind Vm.RestoreInstallDir, Mode=TwoWay}" Width="320" />
-            <ComboBox Header="Source format" ItemsSource="{x:Bind Vm.Formats}"
-                      SelectedItem="{x:Bind Vm.RestoreFormat, Mode=TwoWay}" Width="160" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Header="Archive" Text="{x:Bind Vm.RestoreArchivePath, Mode=TwoWay}" Width="280" />
-                <Button Content="Browse…" Click="BrowseRestore_Click" VerticalAlignment="Bottom" />
-            </StackPanel>
-            <Button Content="Restore" Command="{x:Bind Vm.RestoreCommand}" />
+            <!-- ===== Restore ===== -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Restore" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Recreate a distribution from an archive made here or on another machine." />
+                    <TextBox Header="New name" Text="{x:Bind Vm.RestoreName, Mode=TwoWay}" Width="320" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Name for the recreated distro. Must not match an existing distro." />
+                    <TextBox Header="Install directory" Text="{x:Bind Vm.RestoreInstallDir, Mode=TwoWay}" Width="320" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Folder on Windows where the restored distro's virtual disk will be stored." />
+                    <ComboBox Header="Source format" ItemsSource="{x:Bind Vm.Formats}"
+                              SelectedItem="{x:Bind Vm.RestoreFormat, Mode=TwoWay}" Width="160" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Match the archive type. Pick vhd only for a .vhdx disk image; tar and tar.gz both restore as a filesystem." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Header="Archive" Text="{x:Bind Vm.RestoreArchivePath, Mode=TwoWay}" Width="280" />
+                        <Button Content="Browse…" Click="BrowseRestore_Click" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="The backup file to restore (.tar, .tar.gz, or .vhdx)." />
+                    <Button Content="Restore" Command="{x:Bind Vm.RestoreCommand}" />
+                </StackPanel>
+            </Border>
 
             <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" />
         </StackPanel>

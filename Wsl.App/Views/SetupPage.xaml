@@ -8,6 +8,9 @@
         <TextBlock Text="Set up / repair WSL" Style="{StaticResource TitleTextBlockStyle}" />
         <TextBlock TextWrapping="Wrap"
                    Text="Enables the required Windows features, installs the WSL kernel, and sets the default version to 2. Requires administrator approval (UAC)." />
+        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                   Text="Steps: 1) enable the Virtual Machine Platform + WSL Windows features, 2) restart if required, 3) install/update the WSL kernel, 4) set WSL 2 as the default. Each privileged step runs through an elevated helper, so you'll see a Windows UAC prompt. Progress is saved, so setup resumes automatically after the restart." />
 
         <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                      Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />

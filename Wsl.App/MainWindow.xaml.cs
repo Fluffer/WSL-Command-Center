@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         _pages["Dashboard"] = typeof(Views.DashboardPage);
         _pages["Deploy"] = typeof(Views.DeployPage);
+        _pages["Backup"] = typeof(Views.BackupPage);
         Nav.SelectedItem = Nav.MenuItems[0];
         NavigateTo("Dashboard");
     }

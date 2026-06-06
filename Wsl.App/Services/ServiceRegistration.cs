@@ -3,6 +3,7 @@ using Wsl.Core;
 using Wsl.Core.Ipc;
 using Wsl.Core.Settings;
 using Wsl.Core.Scripting;
+using Wsl.Core.Scheduling;
 using Wsl.App.Logic.ViewModels;
 
 namespace Wsl.App.Services;
@@ -22,6 +23,7 @@ public static class ServiceRegistration
         services.AddSingleton<BootstrapStateStore>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IPowerShellExporter, PowerShellExporter>();
+        services.AddSingleton<IWslScheduleService, WslScheduleService>();
 
         // Broker (privileged) — path resolved next to the app exe.
         services.AddSingleton<IPeerVerifier, WindowsPeerVerifier>();
@@ -37,6 +39,7 @@ public static class ServiceRegistration
         services.AddTransient<BackupViewModel>();          // Task 19
         services.AddTransient<ConfigViewModel>();          // Task 20
         services.AddTransient<SetupViewModel>();           // Task 21
+        services.AddTransient<ScheduleViewModel>();
 
         return services.BuildServiceProvider();
     }

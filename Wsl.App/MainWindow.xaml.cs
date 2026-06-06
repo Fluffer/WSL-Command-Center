@@ -23,6 +23,7 @@ public sealed partial class MainWindow : Window
         _pages["Deploy"] = typeof(Views.DeployPage);
         _pages["Backup"] = typeof(Views.BackupPage);
         _pages["Config"] = typeof(Views.ConfigPage);
+        _pages["Schedule"] = typeof(Views.SchedulePage);
         _pages["Setup"] = typeof(Views.SetupPage);
         _pages["Settings"] = typeof(Views.SettingsPage);
 
@@ -56,7 +57,12 @@ public sealed partial class MainWindow : Window
     /// <summary>Called by App after first-run detection (Task 23).</summary>
     public void NavigateToSetup()
     {
-        Nav.SelectedItem = Nav.MenuItems[4];
+        foreach (var item in Nav.MenuItems)
+            if (item is NavigationViewItem { Tag: "Setup" })
+            {
+                Nav.SelectedItem = item;
+                break;
+            }
         NavigateTo("Setup");
     }
 }

@@ -14,7 +14,18 @@ public sealed partial class ConfigPage : Page
     {
         Vm = App.Services.GetRequiredService<ConfigViewModel>();
         InitializeComponent();
-        _ = Vm.LoadDistrosAsync();
+        _ = Vm.LoadGlobalAsync();   // show current .wslconfig immediately
+        _ = Vm.LoadDistrosAsync();  // populate the per-distro dropdown
+    }
+
+    // Auto-load the selected distro's wsl.conf as soon as it's picked.
+    private async void Distro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (((ComboBox)sender).SelectedItem is string name)
+        {
+            Vm.SelectedDistro = name;
+            await Vm.LoadDistroAsync();
+        }
     }
 
     private async void Shutdown_Click(object s, RoutedEventArgs e)

@@ -29,7 +29,8 @@
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ComboBox Header="Distro" Width="200"
                                       ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
-                                      SelectedItem="{x:Bind Vm.SelectedDistro, Mode=TwoWay}" />
+                                      SelectedItem="{x:Bind Vm.SelectedDistro, Mode=TwoWay}"
+                                      SelectionChanged="Distro_SelectionChanged" />
                             <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" VerticalAlignment="Bottom" />
                         </StackPanel>
                         <Button Content="Load" Command="{x:Bind Vm.LoadDistroCommand}" />

@@ -14,24 +14,67 @@
             <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                          Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
 
-            <TextBlock Text="From catalog" Style="{StaticResource SubtitleTextBlockStyle}" />
-            <Button Content="Load catalog" Command="{x:Bind Vm.LoadCatalogCommand}" />
-            <ComboBox Header="Distro" ItemsSource="{x:Bind Vm.Catalog, Mode=OneWay}"
-                      SelectedItem="{x:Bind Vm.SelectedCatalogEntry, Mode=TwoWay}"
-                      DisplayMemberPath="FriendlyName" Width="320" />
-            <Button Content="Install" Command="{x:Bind Vm.InstallSelectedCommand}" />
+            <!-- ===== From catalog ===== -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="From catalog" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Download a fresh distribution from Microsoft's online catalog. Click Load catalog to fetch the list, pick one, then Install. Needs an internet connection." />
 
-            <TextBlock Text="From archive (.tar / .tar.gz / .vhdx)" Style="{StaticResource SubtitleTextBlockStyle}" />
-            <TextBox Header="Name" Text="{x:Bind Vm.ImportName, Mode=TwoWay}" Width="320" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Header="Install directory" Text="{x:Bind Vm.ImportInstallDir, Mode=TwoWay}" Width="280" />
-                <Button Content="Browse…" Click="BrowseDir_Click" VerticalAlignment="Bottom" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBox Header="Archive" Text="{x:Bind Vm.ImportArchivePath, Mode=TwoWay}" Width="280" />
-                <Button Content="Browse…" Click="BrowseArchive_Click" VerticalAlignment="Bottom" />
-            </StackPanel>
-            <Button Content="Import" Command="{x:Bind Vm.ImportArchiveCommand}" />
+                    <Button Content="Load catalog" Command="{x:Bind Vm.LoadCatalogCommand}" />
+
+                    <ComboBox Header="Distro" ItemsSource="{x:Bind Vm.Catalog, Mode=OneWay}"
+                              SelectedItem="{x:Bind Vm.SelectedCatalogEntry, Mode=TwoWay}"
+                              DisplayMemberPath="FriendlyName" Width="320" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Installed without launching (no first-run setup). Afterwards open it from the Dashboard or a terminal to create your Linux username and password." />
+
+                    <Button Content="Install" Command="{x:Bind Vm.InstallSelectedCommand}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ===== From archive ===== -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="From archive" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Create a distribution from an existing image file. Use this to restore a backup, move a distro to another machine, or import a custom Linux image. No internet needed." />
+
+                    <TextBox Header="Name" Text="{x:Bind Vm.ImportName, Mode=TwoWay}" Width="320" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="A unique name for the new distro — how it appears in the distro list and `wsl -d &lt;name&gt;`." />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Header="Install directory" Text="{x:Bind Vm.ImportInstallDir, Mode=TwoWay}" Width="280" />
+                        <Button Content="Browse…" Click="BrowseDir_Click" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text="Folder on Windows where the distro's virtual disk (ext4.vhdx) will live. Use an empty folder you own, e.g. C:\WSL\&lt;name&gt;." />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Header="Archive" Text="{x:Bind Vm.ImportArchivePath, Mode=TwoWay}" Width="280" />
+                        <Button Content="Browse…" Click="BrowseArchive_Click" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                               Text=".tar / .tar.gz = a Linux filesystem (rootfs). .vhdx = a WSL2 virtual disk. The right import mode is chosen automatically from the file extension." />
+
+                    <Button Content="Import" Command="{x:Bind Vm.ImportArchiveCommand}" />
+                </StackPanel>
+            </Border>
 
             <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" />
         </StackPanel>

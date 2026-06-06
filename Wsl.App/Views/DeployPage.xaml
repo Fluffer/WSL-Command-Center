@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.DeployPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:core="using:Wsl.Core">
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="700" HorizontalAlignment="Left">
+            <TextBlock Text="Deploy a distribution" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                         Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
+
+            <TextBlock Text="From catalog" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <Button Content="Load catalog" Command="{x:Bind Vm.LoadCatalogCommand}" />
+            <ComboBox Header="Distro" ItemsSource="{x:Bind Vm.Catalog, Mode=OneWay}"
+                      SelectedItem="{x:Bind Vm.SelectedCatalogEntry, Mode=TwoWay}"
+                      DisplayMemberPath="FriendlyName" Width="320" />
+            <Button Content="Install" Command="{x:Bind Vm.InstallSelectedCommand}" />
+
+            <TextBlock Text="From archive (.tar / .tar.gz / .vhdx)" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBox Header="Name" Text="{x:Bind Vm.ImportName, Mode=TwoWay}" Width="320" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Header="Install directory" Text="{x:Bind Vm.ImportInstallDir, Mode=TwoWay}" Width="280" />
+                <Button Content="Browse…" Click="BrowseDir_Click" VerticalAlignment="Bottom" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox Header="Archive" Text="{x:Bind Vm.ImportArchivePath, Mode=TwoWay}" Width="280" />
+                <Button Content="Browse…" Click="BrowseArchive_Click" VerticalAlignment="Bottom" />
+            </StackPanel>
+            <Button Content="Import" Command="{x:Bind Vm.ImportArchiveCommand}" />
+
+            <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

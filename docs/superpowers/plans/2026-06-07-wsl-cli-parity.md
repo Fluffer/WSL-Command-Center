@@ -410,11 +410,11 @@ Also add a "Copy PowerShell" button in the dialog reusing the existing `IPowerSh
 - Modify: the page/VM that triggers kernel update (search for the update request usage — likely `SetupViewModel` / `SetupPage`): add a CheckBox/ToggleSwitch "Include pre-release versions" wired to the request.
 - Test: `Wsl.Core.Tests` — if broker handler has existing tests, extend; otherwise test at the contracts level (serialization round-trip) and any VM logic.
 
-- [ ] **Step 1:** Locate existing update request record + handler. Add `PreRelease` with default `false` (back-compat). If `BrokerJsonContext.cs` is a source-generated JSON context, no new registration needed for a property change.
-- [ ] **Step 2:** Failing test: handler invoked with `PreRelease = true` runs `wsl.exe --update --pre-release` (if `PrivilegedOperations` takes an injectable `IProcessRunner`, use `FakeProcessRunner`; check its constructor — if it news up the runner, refactor to inject, matching how `Wsl.Core` services do it).
-- [ ] **Step 3:** Implement: `args = req.PreRelease ? new[] { "--update", "--pre-release" } : new[] { "--update" }`.
-- [ ] **Step 4:** Tests pass. UI toggle added next to the existing update control.
-- [ ] **Step 5:** Build + tests green. Commit `feat(broker): opt-in pre-release WSL updates`.
+- [x] **Step 1:** Locate existing update request record + handler. Add `PreRelease` with default `false` (back-compat). If `BrokerJsonContext.cs` is a source-generated JSON context, no new registration needed for a property change.
+- [x] **Step 2:** Failing test: handler invoked with `PreRelease = true` runs `wsl.exe --update --pre-release` (if `PrivilegedOperations` takes an injectable `IProcessRunner`, use `FakeProcessRunner`; check its constructor — if it news up the runner, refactor to inject, matching how `Wsl.Core` services do it).
+- [x] **Step 3:** Implement: `args = req.PreRelease ? new[] { "--update", "--pre-release" } : new[] { "--update" }`.
+- [x] **Step 4:** Tests pass. UI toggle added next to the existing update control.
+- [x] **Step 5:** Build + tests green. Commit `feat(broker): opt-in pre-release WSL updates`.
 
 ---
 

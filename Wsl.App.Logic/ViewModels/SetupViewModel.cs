@@ -22,6 +22,7 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private bool _rebootRequired;
     [ObservableProperty] private bool _isComplete;
+    [ObservableProperty] private bool _includePreRelease;
 
     [RelayCommand]
     public async Task EnableFeaturesAsync()
@@ -54,7 +55,7 @@ public partial class SetupViewModel : ObservableObject
         await Guarded(async () =>
         {
             // From RebootPending (or EnableFeatures completed) → install kernel.
-            var kernel = await _broker.SendAsync(new InstallOrUpdateKernelRequest());
+            var kernel = await _broker.SendAsync(new InstallOrUpdateKernelRequest(IncludePreRelease));
             if (!kernel.Success) { ErrorMessage = kernel.Error; return; }
             await _state.WriteAsync(BootstrapStep.SetDefaultVersion);
 

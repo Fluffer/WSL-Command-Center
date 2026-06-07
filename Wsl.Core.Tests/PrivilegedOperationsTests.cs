@@ -38,6 +38,19 @@ public class PrivilegedOperationsTests
     }
 
     [Fact]
+    public async Task InstallKernel_with_prerelease_runs_update_pre_release()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "Installing: Windows Subsystem for Linux");
+        var ops = new PrivilegedOperations(runner);
+
+        var resp = await ops.HandleAsync(new InstallOrUpdateKernelRequest(PreRelease: true));
+
+        Assert.True(resp.Success);
+        Assert.Equal(new[] { "--update", "--pre-release" }, runner.LastArgs);
+    }
+
+    [Fact]
     public async Task SetDefaultVersion_passes_version()
     {
         var runner = new FakeProcessRunner();

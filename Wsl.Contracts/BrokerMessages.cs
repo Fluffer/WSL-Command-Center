@@ -11,7 +11,7 @@ public abstract record BrokerRequest;
 
 public record CheckWslInstalledRequest() : BrokerRequest;
 public record EnableFeaturesRequest() : BrokerRequest;
-public record InstallOrUpdateKernelRequest() : BrokerRequest;
+public record InstallOrUpdateKernelRequest(bool PreRelease = false) : BrokerRequest;
 public record SetDefaultWslVersionRequest(int Version) : BrokerRequest;
 
 public record BrokerResponse(

@@ -15,7 +15,7 @@ public class PrivilegedOperations
         {
             CheckWslInstalledRequest => CheckInstalled(ct),
             EnableFeaturesRequest => EnableFeatures(ct),
-            InstallOrUpdateKernelRequest => InstallKernel(ct),
+            InstallOrUpdateKernelRequest r => InstallKernel(r.PreRelease, ct),
             SetDefaultWslVersionRequest r => SetDefaultVersion(r.Version, ct),
             _ => Task.FromResult(new BrokerResponse(false, $"Unknown request: {request.GetType().Name}"))
         };
@@ -50,9 +50,12 @@ public class PrivilegedOperations
         return new BrokerResponse(true, RebootRequired: true, Detail: "features enabled");
     }
 
-    private async Task<BrokerResponse> InstallKernel(CancellationToken ct)
+    private async Task<BrokerResponse> InstallKernel(bool preRelease, CancellationToken ct)
     {
-        var r = await _runner.RunAsync("wsl.exe", new[] { "--update" }, null, ct);
+        var args = preRelease
+            ? new[] { "--update", "--pre-release" }
+            : new[] { "--update" };
+        var r = await _runner.RunAsync("wsl.exe", args, null, ct);
         return r.ExitCode == 0
             ? new BrokerResponse(true, Detail: "kernel updated")
             : Fail(r, "Install/update kernel");

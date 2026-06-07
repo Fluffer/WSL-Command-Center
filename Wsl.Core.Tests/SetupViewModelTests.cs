@@ -61,6 +61,37 @@ public class SetupViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Resume_passes_prerelease_preference_into_kernel_request()
+    {
+        await new BootstrapStateStore(_statePath).WriteAsync(BootstrapStep.RebootPending);
+        var client = new FakeBrokerClient();
+        client.Enqueue(new BrokerResponse(true)); // install kernel
+        client.Enqueue(new BrokerResponse(true)); // set default version
+        var vm = Make(client);
+        vm.IncludePreRelease = true;
+
+        await vm.ResumeAsync();
+
+        var req = Assert.IsType<InstallOrUpdateKernelRequest>(client.Sent[0]);
+        Assert.True(req.PreRelease);
+    }
+
+    [Fact]
+    public async Task Resume_defaults_to_stable_kernel_updates()
+    {
+        await new BootstrapStateStore(_statePath).WriteAsync(BootstrapStep.RebootPending);
+        var client = new FakeBrokerClient();
+        client.Enqueue(new BrokerResponse(true));
+        client.Enqueue(new BrokerResponse(true));
+        var vm = Make(client);
+
+        await vm.ResumeAsync();
+
+        var req = Assert.IsType<InstallOrUpdateKernelRequest>(client.Sent[0]);
+        Assert.False(req.PreRelease);
+    }
+
+    [Fact]
     public async Task Failure_surfaces_error_and_does_not_advance()
     {
         var client = new FakeBrokerClient();

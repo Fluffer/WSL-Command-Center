@@ -44,6 +44,14 @@
                     </Button>
                 </StackPanel>
                 <controls:SettingsExpander.Items>
+                    <controls:SettingsCard
+                        Header="Include pre-release versions"
+                        Description="Install pre-release WSL updates (wsl --update --pre-release). Off = stable releases only.">
+                        <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE896;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <ToggleSwitch IsOn="{x:Bind Vm.IncludePreRelease, Mode=TwoWay}" />
+                    </controls:SettingsCard>
                     <controls:SettingsCard ContentAlignment="Left">
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"

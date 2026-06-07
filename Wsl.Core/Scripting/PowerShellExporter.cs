@@ -37,11 +37,11 @@ public sealed class PowerShellExporter : IPowerShellExporter
     /// The full Setup sequence mirroring the elevated broker: enable both Windows features,
     /// update the kernel, set WSL 2 as default. Must run from an elevated (admin) shell.
     /// </summary>
-    public string EnableFeatures() => string.Join("\r\n", new[]
+    public string EnableFeatures(bool preRelease = false) => string.Join("\r\n", new[]
     {
         "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
         "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
-        "wsl.exe --update",
+        preRelease ? "wsl.exe --update --pre-release" : "wsl.exe --update",
         "wsl.exe --set-default-version 2",
     });
 

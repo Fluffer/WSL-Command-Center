@@ -93,4 +93,13 @@ public class PowerShellExporterTests
             "wsl.exe --update\r\n" +
             "wsl.exe --set-default-version 2",
             _x.EnableFeatures());
+
+    [Fact]
+    public void EnableFeatures_WithPreRelease_MirrorsBrokerSequence()
+        => Assert.Equal(
+            "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart\r\n" +
+            "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart\r\n" +
+            "wsl.exe --update --pre-release\r\n" +
+            "wsl.exe --set-default-version 2",
+            _x.EnableFeatures(preRelease: true));
 }

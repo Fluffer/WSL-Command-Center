@@ -25,7 +25,7 @@ public sealed partial class SetupPage : Page
 
     private void CopyFeaturesPs_Click(object s, RoutedEventArgs e)
     {
-        ClipboardHelper.CopyText(_ps.EnableFeatures());
+        ClipboardHelper.CopyText(_ps.EnableFeatures(Vm.IncludePreRelease));
         Vm.StatusMessage = "Copied setup commands. Run them in an elevated (admin) PowerShell.";
     }
 }

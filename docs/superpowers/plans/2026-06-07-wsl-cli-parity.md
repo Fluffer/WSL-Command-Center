@@ -698,7 +698,7 @@ public static class MovePreflight
 
 **Council requirements:** disk enumeration runs **inside the elevated broker** (WMI `Win32_DiskDrive` via `System.Management` or `Get-Disk` via PowerShell — pick what Wsl.Broker can reference; CIM via `Microsoft.Management.Infrastructure` is also fine); physical-disk mount = typed confirm of device id in UI; VHD mount = plain confirm; mark system disk (`IsSystem`) and refuse to mount it.
 
-- [ ] **Step 1: Failing tests** — handler arg composition:
+- [x] **Step 1: Failing tests** — handler arg composition:
 
 ```csharp
 [Fact]
@@ -731,9 +731,9 @@ public async Task UnmountDisk_without_disk_unmounts_all()
 
 (Adapt to `PrivilegedOperations.HandleAsync`'s real request/response signature; response should carry success/stderr like existing ops.)
 
-- [ ] **Step 2:** FAIL. **Step 3: Implement** handlers. `--vhd` and `--bare` appended when flags set. `ListDisksRequest` handler enumerates `Win32_DiskDrive` (DeviceID, Model, SerialNumber, Size) and flags the system disk (disk index 0 or query `Win32_DiskPartition` Bootable→ simplest robust check: the disk hosting `%SystemDrive%`; if ambiguous, mark index 0). Refuse `MountDiskRequest` for the system disk server-side too (defense in depth) — return error response.
-- [ ] **Step 4:** PASS. **Step 5: UI.** New `DisksPage`: "Mounted in WSL" intro text, disk ListView (model, serial, size, system badge), VHD file picker row. Mount flyout/dialog: bare CheckBox, partition NumberBox, type TextBox (default ext4), options TextBox, name TextBox. Physical disk → typed confirm of `PHYSICALDRIVE{n}`; system disk row disabled. "Unmount all" button. All calls via `IBrokerClient` (elevation prompt handled by existing BrokerClient launch flow). Nav item with appropriate Fluent icon (e.g. `` or HardDrive glyph).
-- [ ] **Step 6:** Build + tests green. Commit `feat(app): mount physical and virtual disks into WSL2 via elevated broker`.
+- [x] **Step 2:** FAIL. **Step 3: Implement** handlers. `--vhd` and `--bare` appended when flags set. `ListDisksRequest` handler enumerates `Win32_DiskDrive` (DeviceID, Model, SerialNumber, Size) and flags the system disk (disk index 0 or query `Win32_DiskPartition` Bootable→ simplest robust check: the disk hosting `%SystemDrive%`; if ambiguous, mark index 0). Refuse `MountDiskRequest` for the system disk server-side too (defense in depth) — return error response.
+- [x] **Step 4:** PASS. **Step 5: UI.** New `DisksPage`: "Mounted in WSL" intro text, disk ListView (model, serial, size, system badge), VHD file picker row. Mount flyout/dialog: bare CheckBox, partition NumberBox, type TextBox (default ext4), options TextBox, name TextBox. Physical disk → typed confirm of `PHYSICALDRIVE{n}`; system disk row disabled. "Unmount all" button. All calls via `IBrokerClient` (elevation prompt handled by existing BrokerClient launch flow). Nav item with appropriate Fluent icon (e.g. `` or HardDrive glyph).
+- [x] **Step 6:** Build + tests green. Commit `feat(app): mount physical and virtual disks into WSL2 via elevated broker`.
 
 ---
 

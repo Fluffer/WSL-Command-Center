@@ -42,6 +42,7 @@ public static class ServiceRegistration
         services.AddTransient<ConfigViewModel>();          // Task 20
         services.AddTransient<SetupViewModel>();           // Task 21
         services.AddTransient<ScheduleViewModel>();
+        services.AddTransient<DisksViewModel>();
 
         return services.BuildServiceProvider();
     }

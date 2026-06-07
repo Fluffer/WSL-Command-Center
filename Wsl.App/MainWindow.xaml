@@ -48,6 +48,11 @@
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE7B8;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Disks" Tag="Disks">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Schedule" Tag="Schedule">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE823;" />

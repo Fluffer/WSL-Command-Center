@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.DisksPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:logic="using:Wsl.App.Logic.ViewModels">
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="4" MaxWidth="1064" HorizontalAlignment="Stretch">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Disks" Style="{StaticResource TitleTextBlockStyle}" />
+                <Button Command="{x:Bind Vm.LoadDisksCommand}" VerticalAlignment="Center"
+                        ToolTipService.ToolTip="Reload the disk list (requires elevation)">
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE72C;" FontSize="14" />
+                </Button>
+                <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}" Width="20" Height="20"
+                                   VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Mount physical disks or virtual disk files into WSL2. Mounted filesystems appear under /mnt/wsl inside every running distribution. All operations here need administrator rights — expect an elevation prompt." />
+
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" Margin="0,0,0,4" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" Margin="0,0,0,4" />
+
+            <!-- ===== Physical disks ===== -->
+            <TextBlock Text="Physical disks" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,4" />
+            <ItemsControl ItemsSource="{x:Bind Vm.Disks, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="logic:DiskRow">
+                        <controls:SettingsCard Header="{x:Bind Model}" Description="{x:Bind Description}"
+                                               Margin="0,0,0,4">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xEDA2;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Border Style="{StaticResource ChipBorderStyle}" VerticalAlignment="Center"
+                                        Visibility="{x:Bind IsSystem, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="System disk" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                </Border>
+                                <Button Content="Mount…" Click="MountDisk_Click" Tag="{x:Bind}"
+                                        IsEnabled="{x:Bind CanMount}"
+                                        ToolTipService.ToolTip="Mount this disk (or one partition) into WSL2." />
+                                <Button Content="Unmount" Click="UnmountDisk_Click" Tag="{x:Bind DeviceId}"
+                                        ToolTipService.ToolTip="Detach this disk from WSL2 if it is mounted." />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ===== Virtual disks ===== -->
+            <TextBlock Text="Virtual disks" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,4" />
+            <controls:SettingsCard
+                Header="Mount a VHD"
+                Description="Attach a .vhdx or .vhd file as a disk inside WSL2. The file must contain a Linux filesystem (e.g. ext4).">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7B8;" />
+                </controls:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBox Text="{x:Bind Vm.VhdPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             MinWidth="240" PlaceholderText="D:\disks\data.vhdx" />
+                    <Button Content="Browse…" Click="BrowseVhd_Click" />
+                    <Button Content="Mount…" Click="MountVhd_Click" Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+            </controls:SettingsCard>
+
+            <!-- ===== Unmount all ===== -->
+            <TextBlock Text="Cleanup" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,4" />
+            <controls:SettingsCard
+                Header="Unmount all"
+                Description="Detach every disk and VHD currently mounted into WSL2. Data on the disks is not touched.">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE75C;" />
+                </controls:SettingsCard.HeaderIcon>
+                <Button Content="Unmount all" Command="{x:Bind Vm.UnmountAllCommand}" />
+            </controls:SettingsCard>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

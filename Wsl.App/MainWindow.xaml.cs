@@ -23,6 +23,7 @@ public sealed partial class MainWindow : Window
         _pages["Dashboard"] = typeof(Views.DashboardPage);
         _pages["Deploy"] = typeof(Views.DeployPage);
         _pages["Backup"] = typeof(Views.BackupPage);
+        _pages["Disks"] = typeof(Views.DisksPage);
         _pages["Config"] = typeof(Views.ConfigPage);
         _pages["Schedule"] = typeof(Views.SchedulePage);
         _pages["Setup"] = typeof(Views.SetupPage);

@@ -76,6 +76,33 @@ public class PrivilegedOperationsTests
     }
 
     [Fact]
+    public async Task UninstallWsl_runs_wsl_uninstall()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");
+        var ops = new PrivilegedOperations(runner);
+
+        var resp = await ops.HandleAsync(new UninstallWslRequest());
+
+        Assert.True(resp.Success);
+        Assert.Equal("wsl.exe", runner.LastExe);
+        Assert.Equal(new[] { "--uninstall" }, runner.LastArgs);
+    }
+
+    [Fact]
+    public async Task UninstallWsl_failure_surfaces_stderr()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(1, "", "Access is denied.");
+        var ops = new PrivilegedOperations(runner);
+
+        var resp = await ops.HandleAsync(new UninstallWslRequest());
+
+        Assert.False(resp.Success);
+        Assert.Contains("denied", resp.Error, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task CheckInstalled_reports_true_when_version_succeeds()
     {
         var runner = new FakeProcessRunner();

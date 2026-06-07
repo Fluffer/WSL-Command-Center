@@ -26,6 +26,7 @@ public class PrivilegedOperations
             MountDiskRequest r => MountDisk(r, ct),
             UnmountDiskRequest r => UnmountDisk(r.Disk, ct),
             LaunchDebugShellRequest => Task.FromResult(LaunchDebugShell()),
+            UninstallWslRequest => UninstallWsl(ct),
             _ => Task.FromResult(new BrokerResponse(false, $"Unknown request: {request.GetType().Name}"))
         };
 
@@ -158,6 +159,16 @@ public class PrivilegedOperations
         {
             return new BrokerResponse(false, $"Launch debug shell failed: {ex.Message}");
         }
+    }
+
+    /// <summary>Removes the WSL package itself from the machine. Unlike the debug shell this is
+    /// a normal blocking command, so it runs through <see cref="_runner"/> with output capture.</summary>
+    private async Task<BrokerResponse> UninstallWsl(CancellationToken ct)
+    {
+        var r = await _runner.RunAsync("wsl.exe", new[] { "--uninstall" }, null, ct);
+        return r.ExitCode == 0
+            ? new BrokerResponse(true, Detail: "wsl uninstalled")
+            : Fail(r, "Uninstall WSL");
     }
 
     /// <summary>True/false when the disk could be checked; null when enumeration failed

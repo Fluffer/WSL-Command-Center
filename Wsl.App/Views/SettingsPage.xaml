@@ -60,6 +60,22 @@
             </controls:SettingsCard>
 
             <InfoBar x:Name="DiagnosticsErrorBar" Severity="Error" IsOpen="False" Margin="0,4,0,0" />
+
+            <TextBlock Text="WSL package" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="1,16,0,6" />
+
+            <controls:SettingsCard
+                Header="Uninstall WSL"
+                Description="Removes the WSL platform itself from this machine. Installed distributions will stop working. This is NOT the same as unregistering a single distribution.">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE74D;" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Name="UninstallWslButton"
+                        Content="Uninstall WSL…"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Click="UninstallWsl_Click" />
+            </controls:SettingsCard>
+
+            <InfoBar x:Name="WslPackageInfoBar" IsOpen="False" Margin="0,4,0,0" />
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Wsl.App.Theming;
 using Wsl.Contracts;
+using Wsl.Core;
 using Wsl.Core.Ipc;
 using Wsl.Core.Settings;
 
@@ -104,6 +106,104 @@ public sealed partial class SettingsPage : Page
         finally
         {
             DebugShellButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>Guarded danger-zone flow: list affected distros, require an explicit checkbox
+    /// acknowledgement AND a typed "UNINSTALL" before the primary button enables. The close
+    /// button stays the default so Enter never triggers the destructive action.</summary>
+    private async void UninstallWsl_Click(object sender, RoutedEventArgs e)
+    {
+        WslPackageInfoBar.IsOpen = false;
+        // Disabled for the whole flow: a second click while the dialog (or the distro listing)
+        // is pending would try to open a second ContentDialog, which throws.
+        UninstallWslButton.IsEnabled = false;
+        try
+        {
+            await RunUninstallWslFlowAsync();
+        }
+        finally
+        {
+            UninstallWslButton.IsEnabled = true;
+        }
+    }
+
+    private async System.Threading.Tasks.Task RunUninstallWslFlowAsync()
+    {
+        var content = new StackPanel { Spacing = 12, MinWidth = 400 };
+        content.Children.Add(new TextBlock
+        {
+            Text = "This removes the WSL platform itself from this machine. It is NOT the same " +
+                   "as unregistering a single distribution — every installed distribution will " +
+                   "stop working until WSL is reinstalled.",
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        var distroList = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        try
+        {
+            var distros = await App.Services.GetRequiredService<WslDistroService>().ListAsync();
+            distroList.Text = distros.Count == 0
+                ? "No installed distributions were found."
+                : "Affected distributions:\n" +
+                  string.Join("\n", distros.Select(d => "  • " + d.Name));
+        }
+        catch (System.Exception) // listing fails when WSL itself is broken — still allow uninstall
+        {
+            distroList.Text = "Could not list installed distributions (WSL may already be " +
+                              "broken). Any installed distributions will still become unavailable.";
+        }
+        content.Children.Add(distroList);
+
+        var ack = new CheckBox { Content = "I understand all listed distributions will become unavailable" };
+        var confirm = new TextBox { Header = "Type \"UNINSTALL\" to confirm", PlaceholderText = "UNINSTALL" };
+        content.Children.Add(ack);
+        content.Children.Add(confirm);
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Uninstall the WSL package?",
+            Content = new ScrollViewer { Content = content }, // distro list can be long
+            PrimaryButtonText = "Uninstall WSL",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close, // never make the destructive action the default
+            IsPrimaryButtonEnabled = false,
+        };
+
+        void UpdatePrimary() => dialog.IsPrimaryButtonEnabled =
+            ack.IsChecked == true
+            && string.Equals(confirm.Text, "UNINSTALL", System.StringComparison.Ordinal);
+        ack.Checked += (_, _) => UpdatePrimary();
+        ack.Unchecked += (_, _) => UpdatePrimary();
+        confirm.TextChanged += (_, _) => UpdatePrimary();
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+        try
+        {
+            var broker = App.Services.GetRequiredService<IBrokerClient>();
+            var resp = await broker.SendAsync(new UninstallWslRequest());
+            if (resp.Success)
+            {
+                WslPackageInfoBar.Severity = InfoBarSeverity.Success;
+                WslPackageInfoBar.Message = "WSL has been uninstalled. Restart this app — and " +
+                                            "possibly Windows — for the change to take full effect.";
+            }
+            else
+            {
+                WslPackageInfoBar.Severity = InfoBarSeverity.Error;
+                WslPackageInfoBar.Message = resp.Error ?? "Uninstalling WSL failed.";
+            }
+        }
+        catch (System.Exception ex)
+        {
+            WslPackageInfoBar.Severity = InfoBarSeverity.Error;
+            WslPackageInfoBar.Message = $"Uninstalling WSL failed: {ex.Message}";
+        }
+        finally
+        {
+            WslPackageInfoBar.IsOpen = true;
         }
     }
 }

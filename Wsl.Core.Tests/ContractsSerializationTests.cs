@@ -32,6 +32,7 @@ public class ContractsSerializationTests
             new MountDiskRequest(@"\\.\PHYSICALDRIVE2"),
             new UnmountDiskRequest(null),
             new LaunchDebugShellRequest(),
+            new UninstallWslRequest(),
         };
         foreach (var req in all)
         {
@@ -85,6 +86,16 @@ public class ContractsSerializationTests
         Assert.Contains("\"$type\":\"launchDebugShell\"", json);
         var back = JsonSerializer.Deserialize<BrokerRequest>(json, Opts);
         Assert.IsType<LaunchDebugShellRequest>(back);
+    }
+
+    [Fact]
+    public void Roundtrips_uninstall_wsl_request()
+    {
+        BrokerRequest req = new UninstallWslRequest();
+        var json = JsonSerializer.Serialize(req, Opts);
+        Assert.Contains("\"$type\":\"uninstallWsl\"", json);
+        var back = JsonSerializer.Deserialize<BrokerRequest>(json, Opts);
+        Assert.IsType<UninstallWslRequest>(back);
     }
 
     [Fact]

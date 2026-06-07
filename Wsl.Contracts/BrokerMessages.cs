@@ -11,6 +11,7 @@ namespace Wsl.Contracts;
 [JsonDerivedType(typeof(MountDiskRequest), "mountDisk")]
 [JsonDerivedType(typeof(UnmountDiskRequest), "unmountDisk")]
 [JsonDerivedType(typeof(LaunchDebugShellRequest), "launchDebugShell")]
+[JsonDerivedType(typeof(UninstallWslRequest), "uninstallWsl")]
 public abstract record BrokerRequest;
 
 public record CheckWslInstalledRequest() : BrokerRequest;
@@ -37,6 +38,11 @@ public record UnmountDiskRequest(string? Disk) : BrokerRequest;
 /// <summary>Open the WSL2 debug shell (<c>wsl.exe --debug-shell</c>) in its own console
 /// window. Elevation-required diagnostics console for the WSL2 utility VM.</summary>
 public record LaunchDebugShellRequest() : BrokerRequest;
+
+/// <summary>Uninstall the WSL package itself (<c>wsl.exe --uninstall</c>). Removes the WSL
+/// platform from the machine; every installed distribution stops working. NOT the same as
+/// unregistering a single distribution.</summary>
+public record UninstallWslRequest() : BrokerRequest;
 
 public record DiskInfo(
     string DeviceId,

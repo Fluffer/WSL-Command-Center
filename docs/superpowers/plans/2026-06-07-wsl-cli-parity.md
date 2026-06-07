@@ -758,9 +758,9 @@ public async Task UnmountDisk_without_disk_unmounts_all()
 - Modify: `Wsl.App/Views/SettingsPage.xaml` + `.xaml.cs`: "WSL package" SettingsCard group at bottom — card explains difference vs unregister ("Removes the WSL platform itself from this machine. Installed distributions will stop working. This is NOT the same as unregistering a single distribution."). Button (red/destructive style) → ContentDialog listing current distros (via `WslDistroService.ListAsync`) that will be affected, CheckBox "I understand all listed distributions will become unavailable", TextBox typed confirm — must equal `UNINSTALL` — primary button disabled until both satisfied.
 - Test: handler arg test (`--uninstall`) with `FakeProcessRunner`.
 
-- [ ] **Step 1:** Failing handler test → implement → pass.
-- [ ] **Step 2:** UI per above. **Do not wire a default/Enter key to the primary button.**
-- [ ] **Step 3:** Build + tests green. Commit `feat(app): guarded WSL package uninstall in settings danger zone`.
+- [x] **Step 1:** Failing handler test → implement → pass.
+- [x] **Step 2:** UI per above. **Do not wire a default/Enter key to the primary button.**
+- [x] **Step 3:** Build + tests green. Commit `feat(app): guarded WSL package uninstall in settings danger zone`.
 
 ---
 

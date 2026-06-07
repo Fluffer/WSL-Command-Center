@@ -126,6 +126,38 @@
                     </controls:SettingsCard>
                 </controls:SettingsExpander.Items>
             </controls:SettingsExpander>
+
+            <!-- ===== Register existing VHDX (import in place) ===== -->
+            <controls:SettingsExpander
+                Header="Register existing VHDX"
+                Description="Register a virtual disk that is already on this machine as a new distro. The VHDX is used where it is — it is not copied. It must contain an ext4 filesystem.">
+                <controls:SettingsExpander.HeaderIcon>
+                    <FontIcon Glyph="&#xEDA2;" />
+                </controls:SettingsExpander.HeaderIcon>
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard
+                        Header="Name"
+                        Description="Name for the new distro. Must not match an existing distro — registering over an existing name would silently replace it.">
+                        <TextBox Text="{x:Bind Vm.InPlaceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 MinWidth="280" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="VHDX file"
+                        Description="The existing .vhdx virtual disk to register. It stays at this location.">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{x:Bind Vm.InPlaceVhdxPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     MinWidth="240" />
+                            <Button Content="Browse…" Click="BrowseInPlace_Click" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Register"
+                        Description="Register the disk with WSL. No data is moved or copied.">
+                        <Button Content="Register" Command="{x:Bind Vm.ImportInPlaceCommand}"
+                                Style="{StaticResource AccentButtonStyle}" />
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </Page>

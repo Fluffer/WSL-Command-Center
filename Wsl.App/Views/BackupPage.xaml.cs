@@ -67,4 +67,13 @@ public sealed partial class BackupPage : Page
         var file = await picker.PickSingleFileAsync();
         if (file is not null) Vm.RestoreArchivePath = file.Path;
     }
+
+    private async void BrowseInPlace_Click(object s, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+        picker.FileTypeFilter.Add(".vhdx");
+        var file = await picker.PickSingleFileAsync();
+        if (file is not null) Vm.InPlaceVhdxPath = file.Path;
+    }
 }

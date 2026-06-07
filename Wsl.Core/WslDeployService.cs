@@ -77,6 +77,18 @@ public class WslDeployService
         WslErrorMapper.ThrowIfFailed(result, $"Import {name}");
     }
 
+    /// <summary>Registers an existing .vhdx where it sits — the file is not copied.
+    /// It must contain an ext4 filesystem.</summary>
+    public async Task ImportInPlaceAsync(string name, string vhdxPath, CancellationToken ct = default)
+    {
+        if (!vhdxPath.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Import in place requires a .vhdx file.", nameof(vhdxPath));
+
+        var result = await _runner.RunAsync("wsl.exe",
+            new[] { "--import-in-place", name, vhdxPath }, null, ct);
+        WslErrorMapper.ThrowIfFailed(result, $"Import {name} in place");
+    }
+
     public async Task ImportVhdxAsync(string name, string installDir, string vhdxPath, int version,
                                       CancellationToken ct = default)
     {

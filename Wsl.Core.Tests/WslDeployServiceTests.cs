@@ -104,4 +104,24 @@ public class WslDeployServiceTests
             svc.InstallCustomAsync(new CustomInstallOptions
             { Distro = "Ubuntu", FromFile = @"D:\x.wsl" }));
     }
+
+    [Fact]
+    public async Task ImportInPlaceAsync_registers_vhdx()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");
+        var svc = new WslDeployService(runner);
+
+        await svc.ImportInPlaceAsync("arch", @"D:\wsl\arch\ext4.vhdx");
+
+        Assert.Equal(new[] { "--import-in-place", "arch", @"D:\wsl\arch\ext4.vhdx" }, runner.LastArgs);
+    }
+
+    [Fact]
+    public async Task ImportInPlaceAsync_rejects_non_vhdx_extension()
+    {
+        var svc = new WslDeployService(new FakeProcessRunner());
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            svc.ImportInPlaceAsync("arch", @"D:\wsl\arch.tar"));
+    }
 }

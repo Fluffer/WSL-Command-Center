@@ -535,7 +535,7 @@ public async Task InstallCustomAsync(CustomInstallOptions o, CancellationToken c
 - Modify: `Wsl.App.Logic/ViewModels/BackupViewModel.cs`
 - Modify: `Wsl.App/Views/BackupPage.xaml` + `.xaml.cs` (card "Register existing VHDX")
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```csharp
 [Fact]
@@ -559,9 +559,9 @@ public async Task ImportInPlaceAsync_rejects_non_vhdx_extension()
 }
 ```
 
-- [ ] **Step 2:** FAIL. **Step 3: Implement** — extension check (`.vhdx`, OrdinalIgnoreCase) then run. **Step 4:** PASS.
-- [ ] **Step 5: UI + guards.** BackupPage card: name TextBox + `.vhdx` FileOpenPicker. VM guards before calling: (a) file exists; (b) **name-collision check** against `WslDistroService.ListAsync` — import-in-place silently clobbers an existing registration (council foot-gun); surface ErrorMessage and refuse. Note in UI text: "The VHDX is used where it is — it is not copied. It must contain an ext4 filesystem."
-- [ ] **Step 6:** Build + tests green. Commit `feat(app): register existing VHDX via import-in-place`.
+- [x] **Step 2:** FAIL. **Step 3: Implement** — extension check (`.vhdx`, OrdinalIgnoreCase) then run. **Step 4:** PASS.
+- [x] **Step 5: UI + guards.** BackupPage card: name TextBox + `.vhdx` FileOpenPicker. VM guards before calling: (a) file exists; (b) **name-collision check** against `WslDistroService.ListAsync` — import-in-place silently clobbers an existing registration (council foot-gun); surface ErrorMessage and refuse. Note in UI text: "The VHDX is used where it is — it is not copied. It must contain an ext4 filesystem."
+- [x] **Step 6:** Build + tests green. Commit `feat(app): register existing VHDX via import-in-place`.
 
 ---
 

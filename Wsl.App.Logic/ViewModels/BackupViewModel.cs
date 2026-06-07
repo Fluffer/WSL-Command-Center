@@ -9,11 +9,13 @@ public partial class BackupViewModel : ObservableObject
 {
     private readonly WslBackupService _backup;
     private readonly WslDistroService _distros;
+    private readonly WslDeployService _deploy;
 
-    public BackupViewModel(WslBackupService backup, WslDistroService distros)
+    public BackupViewModel(WslBackupService backup, WslDistroService distros, WslDeployService deploy)
     {
         _backup = backup;
         _distros = distros;
+        _deploy = deploy;
     }
 
     public ObservableCollection<string> Distros { get; } = new();
@@ -67,6 +69,50 @@ public partial class BackupViewModel : ObservableObject
                                        RestoreFormat, RestoreVersion);
             StatusMessage = $"Restored {RestoreName}";
         });
+    }
+
+    // Import in place (register an existing VHDX)
+    [ObservableProperty] private string _inPlaceName = "";
+    [ObservableProperty] private string _inPlaceVhdxPath = "";
+
+    [RelayCommand]
+    public async Task ImportInPlaceAsync()
+    {
+        ErrorMessage = null;
+        var name = InPlaceName.Trim();
+        var path = InPlaceVhdxPath.Trim();
+
+        if (name.Length == 0)
+        { ErrorMessage = "Enter a name for the distro."; return; }
+        if (path.Length == 0)
+        { ErrorMessage = "Choose a .vhdx file."; return; }
+        if (!path.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase))
+        { ErrorMessage = "Import in place requires a .vhdx file."; return; }
+        if (!File.Exists(path))
+        { ErrorMessage = $"File not found: {path}"; return; }
+
+        await Guarded(async () =>
+        {
+            // import-in-place silently clobbers an existing registration — refuse collisions.
+            var existing = await ListExistingNamesSafeAsync();
+            if (existing.Contains(name, StringComparer.OrdinalIgnoreCase))
+            { ErrorMessage = $"A distro named '{name}' is already registered. Pick another name."; return; }
+
+            await _deploy.ImportInPlaceAsync(name, path);
+            StatusMessage = $"Registered {name} from {path}";
+        });
+    }
+
+    /// <summary>Collision check must not block when `wsl --list` fails (e.g. no
+    /// distro registered yet) — a failed list counts as "none".</summary>
+    private async Task<IReadOnlyList<string>> ListExistingNamesSafeAsync()
+    {
+        try
+        {
+            var distros = await _distros.ListAsync();
+            return distros.Select(d => d.Name).ToList();
+        }
+        catch (WslException) { return Array.Empty<string>(); }
     }
 
     private async Task Guarded(Func<Task> work)

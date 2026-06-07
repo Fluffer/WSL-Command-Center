@@ -52,6 +52,45 @@ public sealed partial class DashboardPage : Page
             await Vm.OptimizeAsync(name);
     }
 
+    private async void SetDefaultUser_Click(object s, RoutedEventArgs e)
+    {
+        if (s is not FrameworkElement { Tag: string name }) return;
+
+        // Implicitly starts the distro if stopped (`wsl -d` boots it) — acceptable per plan.
+        var users = await Vm.ListUsersAsync(name);
+        if (users.Count == 0) return; // failure already surfaced via Vm.ErrorMessage
+
+        var combo = new ComboBox
+        {
+            ItemsSource = users,
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = $"Set default user for '{name}'",
+            Content = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "New sessions of this distro will log in as the selected user.",
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    combo,
+                },
+            },
+            PrimaryButtonText = "Set default user",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary && combo.SelectedItem is string user)
+            await Vm.SetDefaultUserAsync(name, user);
+    }
+
     private async void Start_Click(object s, RoutedEventArgs e)
         => await Vm.StartAsync((string)((Button)s).Tag);
 

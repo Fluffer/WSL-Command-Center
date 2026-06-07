@@ -52,6 +52,26 @@ public class WslDistroService
     public Task UnregisterAsync(string name, CancellationToken ct = default)
         => Run(new[] { "--unregister", name }, $"Unregister {name}", ct);
 
+    public Task SetDefaultUserAsync(string name, string user, CancellationToken ct = default)
+        => Run(new[] { "--manage", name, "--set-default-user", user }, $"Set default user for {name}", ct);
+
+    /// <summary>Lists login-capable users in the distro (root + regular UIDs 1000–59999,
+    /// excluding nologin/false shells). Starts the distro implicitly if stopped.</summary>
+    public async Task<IReadOnlyList<string>> ListUsersAsync(string name, CancellationToken ct = default)
+    {
+        var result = await _runner.RunAsync("wsl.exe",
+            new[] { "-d", name, "-u", "root", "--", "getent", "passwd" }, null, ct);
+        WslErrorMapper.ThrowIfFailed(result, $"List users for {name}");
+        return result.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Split(':'))
+            .Where(p => p.Length >= 7)
+            .Where(p => p[0] == "root" ||
+                        (int.TryParse(p[2], out var uid) && uid >= 1000 && uid < 60000))
+            .Where(p => !p[6].Trim().EndsWith("nologin") && !p[6].Trim().EndsWith("false"))
+            .Select(p => p[0])
+            .ToList();
+    }
+
     private async Task Run(string[] args, string op, CancellationToken ct)
     {
         var result = await _runner.RunAsync("wsl.exe", args, null, ct);

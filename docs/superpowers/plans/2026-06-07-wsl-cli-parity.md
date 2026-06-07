@@ -194,7 +194,7 @@ NOTE: if `WslErrorMapper` has a different API than `ThrowIfFailed(ProcessResult)
 - Modify: `Wsl.App.Logic/ViewModels/DashboardViewModel.cs` (command)
 - Modify: `Wsl.App/Views/DashboardPage.xaml` + `.xaml.cs` (menu item + ContentDialog with user ComboBox)
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```csharp
 [Fact]
@@ -226,9 +226,9 @@ public async Task ListUsersAsync_parses_passwd_users_with_login_shells()
 }
 ```
 
-- [ ] **Step 2:** Run — FAIL.
+- [x] **Step 2:** Run — FAIL.
 
-- [ ] **Step 3: Implement** on `WslDistroService`:
+- [x] **Step 3: Implement** on `WslDistroService`:
 
 ```csharp
 public async Task SetDefaultUserAsync(string name, string user, CancellationToken ct = default)
@@ -254,9 +254,9 @@ public async Task<IReadOnlyList<string>> ListUsersAsync(string name, Cancellatio
 }
 ```
 
-- [ ] **Step 4:** Run — PASS.
+- [x] **Step 4:** Run — PASS.
 
-- [ ] **Step 5: UI.** Dashboard per-distro overflow menu (find existing per-distro buttons/menu in `DashboardPage.xaml`): add "Set default user…". Opens `ContentDialog` with ComboBox populated via `ListUsersAsync` (guard: only when distro running or start it implicitly — `wsl -d` starts it; acceptable). Primary button calls `SetDefaultUserAsync`. VM command:
+- [x] **Step 5: UI.** Dashboard per-distro overflow menu (find existing per-distro buttons/menu in `DashboardPage.xaml`): add "Set default user…". Opens `ContentDialog` with ComboBox populated via `ListUsersAsync` (guard: only when distro running or start it implicitly — `wsl -d` starts it; acceptable). Primary button calls `SetDefaultUserAsync`. VM command:
 
 ```csharp
 [RelayCommand]
@@ -269,7 +269,7 @@ public async Task SetDefaultUserAsync((string distro, string user) p)
 
 (Adapt parameter shape to how existing dialogs pass values — codebehind may call `Vm` methods directly; follow `DashboardPage.xaml.cs` existing dialog idiom.)
 
-- [ ] **Step 6:** Build + full test run green. Commit `feat(app): set default distro user from dashboard`.
+- [x] **Step 6:** Build + full test run green. Commit `feat(app): set default distro user from dashboard`.
 
 ---
 

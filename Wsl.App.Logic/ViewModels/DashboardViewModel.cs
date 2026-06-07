@@ -71,6 +71,28 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     public Task OptimizeAsync(string name) => ActionThenRefresh(() => _disk.OptimizeAsync(name));
 
+    /// <summary>Sets the default login user for a distro. Two parameters, so a plain method
+    /// (codebehind invokes VM methods directly; [RelayCommand] supports at most one).
+    /// Refreshes afterwards: listing users boots the distro, so the state pill needs updating.</summary>
+    public Task SetDefaultUserAsync(string name, string user)
+        => ActionThenRefresh(() => _distros.SetDefaultUserAsync(name, user));
+
+    /// <summary>Login-capable users of a distro for the set-default-user picker.
+    /// Failures surface via ErrorMessage and yield an empty list.</summary>
+    public async Task<IReadOnlyList<string>> ListUsersAsync(string name)
+    {
+        ErrorMessage = null;
+        try
+        {
+            return await _distros.ListUsersAsync(name);
+        }
+        catch (WslException ex)
+        {
+            ErrorMessage = ex.Message;
+            return Array.Empty<string>();
+        }
+    }
+
     /// <summary>Best-effort platform status line; failures must never break the distro refresh.</summary>
     private async Task LoadStatusSummaryAsync()
     {

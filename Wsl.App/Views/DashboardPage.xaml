@@ -116,6 +116,11 @@
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="Set default user…" Click="SetDefaultUser_Click" Tag="{x:Bind Name}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE77B;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
                                             <MenuFlyoutSubItem Text="Copy PowerShell command">
                                                 <MenuFlyoutItem Text="Start" Click="CopyStart_Click" Tag="{x:Bind Name}" />
                                                 <MenuFlyoutItem Text="Stop (terminate)" Click="CopyStop_Click" Tag="{x:Bind Name}" />

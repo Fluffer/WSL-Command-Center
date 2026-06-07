@@ -76,6 +76,58 @@ public class DashboardViewModelTests
     }
 
     [Fact]
+    public async Task SetDefaultUser_invokes_manage_then_refreshes()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");          // --manage … --set-default-user
+        runner.Enqueue(0, ListOutput);  // refresh (listing users boots the distro)
+        var vm = NewVm(runner);
+
+        await vm.SetDefaultUserAsync("Ubuntu", "peter");
+
+        Assert.Equal(new[] { "--manage", "Ubuntu", "--set-default-user", "peter" }, runner.AllArgs[0]);
+        Assert.Equal(2, vm.Distros.Count); // refreshed after action
+        Assert.Null(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task SetDefaultUser_failure_surfaces_error_message()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(1, "", "There is no distribution with the supplied name.");
+        var vm = NewVm(runner);
+
+        await vm.SetDefaultUserAsync("Ghost", "peter");
+
+        Assert.NotNull(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ListUsers_returns_users_from_service()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "root:x:0:0:root:/root:/bin/bash\npeter:x:1000:1000::/home/peter:/bin/bash\n");
+        var vm = NewVm(runner);
+
+        var users = await vm.ListUsersAsync("Ubuntu");
+
+        Assert.Equal(new[] { "root", "peter" }, users);
+    }
+
+    [Fact]
+    public async Task ListUsers_failure_surfaces_error_and_returns_empty()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(1, "", "There is no distribution with the supplied name.");
+        var vm = NewVm(runner);
+
+        var users = await vm.ListUsersAsync("Ghost");
+
+        Assert.Empty(users);
+        Assert.NotNull(vm.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Refresh_status_failure_does_not_break_distro_refresh()
     {
         var runner = new FakeProcessRunner();

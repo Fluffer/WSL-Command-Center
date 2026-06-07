@@ -141,9 +141,20 @@ public sealed partial class DashboardPage : Page
         };
 
         if (result == ContentDialogResult.Primary)
-            TerminalLauncher.Launch(LaunchCommandBuilder.Build(name, options));
+        {
+            try
+            {
+                TerminalLauncher.Launch(LaunchCommandBuilder.Build(name, options));
+            }
+            catch (Exception ex) // Win32Exception etc. — async void handler must not crash the app
+            {
+                Vm.ErrorMessage = $"Could not launch wsl.exe: {ex.Message}";
+            }
+        }
         else
+        {
             CopyCommand(_ps.Launch(name, options));
+        }
     }
 
     private async void Start_Click(object s, RoutedEventArgs e)

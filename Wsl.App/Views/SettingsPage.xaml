@@ -36,6 +36,30 @@
                 </controls:SettingsCard.HeaderIcon>
                 <ComboBox x:Name="FontCombo" MinWidth="200" SelectionChanged="Setting_Changed" />
             </controls:SettingsCard>
+
+            <TextBlock Text="Developer" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="1,16,0,6" />
+
+            <controls:SettingsCard
+                Header="Developer mode"
+                Description="Reveals advanced diagnostics tools. Leave off unless you are troubleshooting WSL itself.">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xEC7A;" />
+                </controls:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="DeveloperToggle" Toggled="DeveloperToggle_Toggled" />
+            </controls:SettingsCard>
+
+            <controls:SettingsCard
+                x:Name="DiagnosticsCard"
+                Visibility="Collapsed"
+                Header="Diagnostics"
+                Description="Open the WSL2 debug shell — an advanced diagnostics console attached to the WSL2 virtual machine. For troubleshooting only. Requires administrator rights (expect an elevation prompt).">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE756;" />
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Name="DebugShellButton" Content="Open WSL2 debug shell" Click="DebugShell_Click" />
+            </controls:SettingsCard>
+
+            <InfoBar x:Name="DiagnosticsErrorBar" Severity="Error" IsOpen="False" Margin="0,4,0,0" />
         </StackPanel>
     </ScrollViewer>
 </Page>

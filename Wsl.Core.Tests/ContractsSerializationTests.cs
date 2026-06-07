@@ -31,6 +31,7 @@ public class ContractsSerializationTests
             new ListDisksRequest(),
             new MountDiskRequest(@"\\.\PHYSICALDRIVE2"),
             new UnmountDiskRequest(null),
+            new LaunchDebugShellRequest(),
         };
         foreach (var req in all)
         {
@@ -74,6 +75,16 @@ public class ContractsSerializationTests
         Assert.Equal("ext4", typed.Type);
         Assert.Equal("ro", typed.Options);
         Assert.Equal("data", typed.Name);
+    }
+
+    [Fact]
+    public void Roundtrips_launch_debug_shell_request()
+    {
+        BrokerRequest req = new LaunchDebugShellRequest();
+        var json = JsonSerializer.Serialize(req, Opts);
+        Assert.Contains("\"$type\":\"launchDebugShell\"", json);
+        var back = JsonSerializer.Deserialize<BrokerRequest>(json, Opts);
+        Assert.IsType<LaunchDebugShellRequest>(back);
     }
 
     [Fact]

@@ -14,4 +14,7 @@ public sealed class AppSettings
 
     /// <summary>UI font family name. Defaults to the system "Segoe UI Variable".</summary>
     public string Font { get; set; } = "Segoe UI Variable";
+
+    /// <summary>Reveals developer/diagnostics tools (e.g. the WSL2 debug shell). Off by default.</summary>
+    public bool DeveloperMode { get; set; }
 }

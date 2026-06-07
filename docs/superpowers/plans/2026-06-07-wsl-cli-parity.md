@@ -745,8 +745,8 @@ public async Task UnmountDisk_without_disk_unmounts_all()
 - Modify: `Wsl.App/Views/SettingsPage.xaml` + `.xaml.cs`: "Developer mode" ToggleSwitch (persist in same local-settings store the page already uses for theme — follow existing idiom) + when on, show "Diagnostics" SettingsCard with "Open WSL2 debug shell" button (calls broker) and disclaimer text.
 - Test: handler test = starts process detached — keep handler thin; if untestable without abstraction, test only the request serialization round-trip and that non-debug path unaffected. Don't over-engineer.
 
-- [ ] **Step 1:** Add request + handler + UI. Debug shell is elevation-required → broker. Settings page is imperative (no VM) — keep that style.
-- [ ] **Step 2:** Build + tests green. Commit `feat(app): WSL2 debug shell behind developer mode toggle`.
+- [x] **Step 1:** Add request + handler + UI. Debug shell is elevation-required → broker. Settings page is imperative (no VM) — keep that style.
+- [x] **Step 2:** Build + tests green. Commit `feat(app): WSL2 debug shell behind developer mode toggle`.
 
 ---
 

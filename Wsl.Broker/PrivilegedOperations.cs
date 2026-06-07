@@ -25,6 +25,7 @@ public class PrivilegedOperations
             ListDisksRequest => Task.FromResult(ListDisks()),
             MountDiskRequest r => MountDisk(r, ct),
             UnmountDiskRequest r => UnmountDisk(r.Disk, ct),
+            LaunchDebugShellRequest => Task.FromResult(LaunchDebugShell()),
             _ => Task.FromResult(new BrokerResponse(false, $"Unknown request: {request.GetType().Name}"))
         };
 
@@ -134,6 +135,29 @@ public class PrivilegedOperations
         return r.ExitCode == 0
             ? new BrokerResponse(true, Detail: disk is null ? "unmounted all" : $"unmounted {disk}")
             : Fail(r, "Unmount disk");
+    }
+
+    /// <summary>Starts <c>wsl.exe --debug-shell</c> detached in its own console window.
+    /// No output capture, no wait — the shell is interactive; success means it launched.
+    /// Deliberately bypasses <see cref="_runner"/>, which captures output and waits for exit.</summary>
+    private static BrokerResponse LaunchDebugShell()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("wsl.exe")
+            {
+                UseShellExecute = true, // own console window
+            };
+            psi.ArgumentList.Add("--debug-shell");
+            using var p = System.Diagnostics.Process.Start(psi); // dispose handle only; shell keeps running
+            return p is not null
+                ? new BrokerResponse(true, Detail: "debug shell started")
+                : new BrokerResponse(false, "Debug shell process did not start.");
+        }
+        catch (Exception ex)
+        {
+            return new BrokerResponse(false, $"Launch debug shell failed: {ex.Message}");
+        }
     }
 
     /// <summary>True/false when the disk could be checked; null when enumeration failed

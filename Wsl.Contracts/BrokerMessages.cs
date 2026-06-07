@@ -10,6 +10,7 @@ namespace Wsl.Contracts;
 [JsonDerivedType(typeof(ListDisksRequest), "listDisks")]
 [JsonDerivedType(typeof(MountDiskRequest), "mountDisk")]
 [JsonDerivedType(typeof(UnmountDiskRequest), "unmountDisk")]
+[JsonDerivedType(typeof(LaunchDebugShellRequest), "launchDebugShell")]
 public abstract record BrokerRequest;
 
 public record CheckWslInstalledRequest() : BrokerRequest;
@@ -32,6 +33,10 @@ public record MountDiskRequest(
 
 /// <summary>Unmount one disk, or every mounted disk when <paramref name="Disk"/> is null.</summary>
 public record UnmountDiskRequest(string? Disk) : BrokerRequest;
+
+/// <summary>Open the WSL2 debug shell (<c>wsl.exe --debug-shell</c>) in its own console
+/// window. Elevation-required diagnostics console for the WSL2 utility VM.</summary>
+public record LaunchDebugShellRequest() : BrokerRequest;
 
 public record DiskInfo(
     string DeviceId,

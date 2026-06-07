@@ -80,6 +80,22 @@ public class ThemeServiceTests
     }
 
     [Fact]
+    public void Save_ThenLoad_RoundTripsDeveloperMode()
+    {
+        var path = TempFile();
+        try
+        {
+            new ThemeService(path).Save(new AppSettings { DeveloperMode = true });
+            Assert.True(new ThemeService(path).Load().DeveloperMode);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Load_DefaultsDeveloperModeOff()
+        => Assert.False(new ThemeService(TempFile()).Load().DeveloperMode);
+
+    [Fact]
     public void Load_SettingsFileWithUnknownFields_StillLoads()
     {
         var path = TempFile();

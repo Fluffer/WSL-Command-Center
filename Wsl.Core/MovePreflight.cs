@@ -6,6 +6,8 @@ public static class MovePreflight
 {
     public static readonly Version MinWslVersion = new(2, 0, 14);
 
+    // NOTE: DashboardPage maps failures back to checklist lines by keyword
+    // ("WSL" / "space" / "NTFS") — keep each message keyword-distinct.
     public static MovePreflightResult Evaluate(
         Version wslVersion, long vhdxSizeBytes, long targetFreeBytes, string targetDriveFormat)
     {

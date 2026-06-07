@@ -581,7 +581,7 @@ public async Task ImportInPlaceAsync_rejects_non_vhdx_extension()
 4. Target drive format must be NTFS (no FAT32/exFAT/network)
 5. UI: typed confirmation = distro name; warning "cannot be cancelled once started"; suggest backup first (link to Backup page)
 
-- [ ] **Step 1: Failing tests** (preflight is pure logic → fully testable; filesystem facts passed in)
+- [x] **Step 1: Failing tests** (preflight is pure logic → fully testable; filesystem facts passed in)
 
 ```csharp
 using Wsl.Core;
@@ -648,7 +648,7 @@ public class WslDiskServiceMoveTests
 }
 ```
 
-- [ ] **Step 2:** FAIL. **Step 3: Implement**
+- [x] **Step 2:** FAIL. **Step 3: Implement**
 
 ```csharp
 // Wsl.Core/MovePreflight.cs
@@ -678,8 +678,8 @@ public static class MovePreflight
 
 `WslDiskService.MoveAsync(string name, string targetDir, CancellationToken ct = default)`: terminate → `--manage {name} --move {targetDir}` with **no timeout** (long copy; pass `Timeout.InfiniteTimeSpan` or the service's long-running idiom — match how export/import handle long ops). Also add helper `GetVhdxInfo(string name)` in `WslDiskService` reading the distro's `BasePath` from registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\*` (DistributionName match) → `FileInfo(ext4.vhdx).Length`. Keep registry access in one small method; it stays untested (thin I/O wrapper), preflight logic is what's tested.
 
-- [ ] **Step 4:** PASS. **Step 5: UI.** Dashboard distro menu → "Move distro…" dialog: folder picker, then run preflight (`DriveInfo` for free bytes + format, `GetVhdxInfo` for size, `WslSystemService` for version) and show pass/fail checklist in the dialog. Primary button disabled until preflight Ok **and** TextBox text equals distro name exactly. Warning InfoBar: "This cannot be cancelled once started. Consider exporting a backup first." Progress ring while running; refresh list after.
-- [ ] **Step 6:** Build + tests green. Commit `feat(app): move distro to another drive with preflight guard rails`.
+- [x] **Step 4:** PASS. **Step 5: UI.** Dashboard distro menu → "Move distro…" dialog: folder picker, then run preflight (`DriveInfo` for free bytes + format, `GetVhdxInfo` for size, `WslSystemService` for version) and show pass/fail checklist in the dialog. Primary button disabled until preflight Ok **and** TextBox text equals distro name exactly. Warning InfoBar: "This cannot be cancelled once started. Consider exporting a backup first." Progress ring while running; refresh list after.
+- [x] **Step 6:** Build + tests green. Commit `feat(app): move distro to another drive with preflight guard rails`.
 
 ---
 

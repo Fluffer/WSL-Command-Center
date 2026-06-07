@@ -128,6 +128,64 @@ public class DashboardViewModelTests
     }
 
     [Fact]
+    public async Task Move_terminates_moves_then_refreshes()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");          // terminate
+        runner.Enqueue(0, "");          // --manage … --move
+        runner.Enqueue(0, ListOutput);  // refresh
+        var vm = NewVm(runner);
+
+        await vm.MoveAsync("Ubuntu", @"D:\wsl\ubuntu");
+
+        Assert.Equal(new[] { "--terminate", "Ubuntu" }, runner.AllArgs[0]);
+        Assert.Equal(new[] { "--manage", "Ubuntu", "--move", @"D:\wsl\ubuntu" }, runner.AllArgs[1]);
+        Assert.Equal(2, vm.Distros.Count); // refreshed after action
+        Assert.Null(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Move_failure_surfaces_error_message()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");                          // terminate ok
+        runner.Enqueue(1, "", "The system cannot find the path specified."); // move fails
+        var vm = NewVm(runner);
+
+        await vm.MoveAsync("Ubuntu", @"Q:\nope");
+
+        Assert.NotNull(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task MovePreflight_passes_with_current_wsl_and_good_target()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, VersionOutput); // --version → 2.4.13.0
+        var vm = NewVm(runner);
+
+        var p = await vm.EvaluateMovePreflightAsync(
+            vhdxSizeBytes: 10_000_000_000,
+            targetFreeBytes: 12_000_000_000,
+            targetDriveFormat: "NTFS");
+
+        Assert.True(p.Ok);
+    }
+
+    [Fact]
+    public async Task MovePreflight_fails_when_version_query_fails()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(1, "", "wsl.exe exploded"); // --version fails → version gate must fail
+        var vm = NewVm(runner);
+
+        var p = await vm.EvaluateMovePreflightAsync(1_000, 1_000_000, "NTFS");
+
+        Assert.False(p.Ok);
+        Assert.Contains(p.Failures, f => f.Contains("WSL"));
+    }
+
+    [Fact]
     public async Task Refresh_status_failure_does_not_break_distro_refresh()
     {
         var runner = new FakeProcessRunner();

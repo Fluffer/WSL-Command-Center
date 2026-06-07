@@ -71,6 +71,30 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     public Task OptimizeAsync(string name) => ActionThenRefresh(() => _disk.OptimizeAsync(name));
 
+    /// <summary>Moves a distro's storage to another directory. Two parameters, so a plain method
+    /// (codebehind invokes VM methods directly; [RelayCommand] supports at most one).
+    /// The view must run <see cref="EvaluateMovePreflightAsync"/> and get a pass before calling this.</summary>
+    public Task MoveAsync(string name, string targetDir)
+        => ActionThenRefresh(() => _disk.MoveAsync(name, targetDir));
+
+    /// <summary>Move preflight: queries the WSL version (gate ≥ <see cref="MovePreflight.MinWslVersion"/>)
+    /// and combines it with filesystem facts the view supplies (DriveInfo/vhdx reads stay view-side
+    /// so this stays testable). A failed version query fails the gate rather than bypassing it.</summary>
+    public async Task<MovePreflightResult> EvaluateMovePreflightAsync(
+        long vhdxSizeBytes, long targetFreeBytes, string targetDriveFormat)
+    {
+        Version wslVersion;
+        try
+        {
+            wslVersion = (await _system.GetVersionInfoAsync()).WslVersionParsed;
+        }
+        catch (Exception) // WslException, or Win32Exception when wsl.exe itself is missing
+        {
+            wslVersion = new Version(0, 0); // unknown → fails the ≥ MinWslVersion gate
+        }
+        return MovePreflight.Evaluate(wslVersion, vhdxSizeBytes, targetFreeBytes, targetDriveFormat);
+    }
+
     /// <summary>Sets the default login user for a distro. Two parameters, so a plain method
     /// (codebehind invokes VM methods directly; [RelayCommand] supports at most one).
     /// Refreshes afterwards: listing users boots the distro, so the state pill needs updating.</summary>

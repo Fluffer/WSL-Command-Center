@@ -121,6 +121,11 @@
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="Move distro…" Click="MoveDistro_Click" Tag="{x:Bind Name}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8DE;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
                                             <MenuFlyoutItem Text="Set default user…" Click="SetDefaultUser_Click" Tag="{x:Bind Name}">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE77B;" />

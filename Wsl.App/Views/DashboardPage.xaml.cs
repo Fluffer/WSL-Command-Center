@@ -1,6 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Extensions.DependencyInjection;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 using Wsl.App.Logic.ViewModels;
 using Wsl.App.Services;
 using Wsl.Core;
@@ -52,6 +55,155 @@ public sealed partial class DashboardPage : Page
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             await Vm.OptimizeAsync(name);
+    }
+
+    private async void MoveDistro_Click(object s, RoutedEventArgs e)
+    {
+        if (s is not FrameworkElement { Tag: string name }) return;
+
+        // Council guard 5: irreversibility warning + backup suggestion.
+        var warning = new InfoBar
+        {
+            Severity = InfoBarSeverity.Warning,
+            IsOpen = true,
+            IsClosable = false,
+            Message = "This cannot be cancelled once started. Consider exporting a backup first (Backup page).",
+        };
+        var browse = new Button { Content = "Choose target folder…" };
+        var folderText = new TextBlock
+        {
+            Text = "No folder selected.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+        };
+        var checklist = new StackPanel { Spacing = 4 };
+        checklist.Children.Add(new TextBlock
+        {
+            Text = "Select a target folder to run the preflight checks.",
+            TextWrapping = TextWrapping.Wrap,
+        });
+        // Council guard 5: typed confirmation must equal the distro name exactly.
+        var confirm = new TextBox { Header = $"Type \"{name}\" to confirm", PlaceholderText = name };
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = $"Move '{name}' to another drive",
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                MinWidth = 400,
+                Children = { warning, browse, folderText, checklist, confirm },
+            },
+            PrimaryButtonText = "Move",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close, // never make the destructive action the default
+            IsPrimaryButtonEnabled = false,
+        };
+
+        string? targetDir = null;
+        var preflightOk = false;
+        void UpdatePrimary()
+            => dialog.IsPrimaryButtonEnabled = preflightOk && string.Equals(confirm.Text, name, StringComparison.Ordinal);
+        confirm.TextChanged += (_, _) => UpdatePrimary();
+
+        browse.Click += async (_, _) =>
+        {
+            var picker = new FolderPicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+            picker.FileTypeFilter.Add("*");
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder is null) return;
+            targetDir = folder.Path;
+            folderText.Text = targetDir;
+            preflightOk = await RunMovePreflightAsync(name, targetDir, checklist);
+            UpdatePrimary();
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary && targetDir is not null)
+            await Vm.MoveAsync(name, targetDir); // terminates first; IsBusy drives the progress ring; refreshes after
+    }
+
+    /// <summary>Gathers the filesystem facts (vhdx size, target free space + format), runs the
+    /// preflight via the VM (which adds the WSL version gate), and renders pass/fail lines.</summary>
+    private async Task<bool> RunMovePreflightAsync(string name, string targetDir, StackPanel checklist)
+    {
+        checklist.Children.Clear();
+
+        VhdxInfo? vhdx;
+        try
+        {
+            vhdx = WslDiskService.GetVhdxInfo(name);
+        }
+        catch (Exception) // corrupt BasePath value etc. — treat as "not found", don't crash the dialog
+        {
+            vhdx = null;
+        }
+        if (vhdx is null)
+        {
+            checklist.Children.Add(CheckLine(false, $"Could not locate the virtual disk (ext4.vhdx) for '{name}'."));
+            return false;
+        }
+        checklist.Children.Add(CheckLine(true, $"Found virtual disk ({vhdx.SizeBytes / 1_073_741_824.0:F1} GB)."));
+
+        long freeBytes;
+        string driveFormat;
+        try
+        {
+            var root = Path.GetPathRoot(targetDir);
+            if (string.IsNullOrEmpty(root)) throw new ArgumentException("Path has no root.");
+            var drive = new DriveInfo(root);
+            freeBytes = drive.AvailableFreeSpace;
+            driveFormat = drive.DriveFormat;
+        }
+        catch (Exception) // UNC/network paths and unmapped drives — DriveInfo cannot answer
+        {
+            checklist.Children.Add(CheckLine(false, "Target must be on a local drive (network paths are not supported)."));
+            return false;
+        }
+
+        var result = await Vm.EvaluateMovePreflightAsync(vhdx.SizeBytes, freeBytes, driveFormat);
+
+        // Map each guard to its failure message (messages are keyword-distinct, see MovePreflight).
+        var wslFail = result.Failures.FirstOrDefault(f => f.Contains("WSL"));
+        checklist.Children.Add(wslFail is null
+            ? CheckLine(true, $"WSL version is {MovePreflight.MinWslVersion} or newer.")
+            : CheckLine(false, wslFail));
+
+        var spaceFail = result.Failures.FirstOrDefault(f => f.Contains("space"));
+        checklist.Children.Add(spaceFail is null
+            ? CheckLine(true, "Enough free space on the target drive (incl. 10% buffer).")
+            : CheckLine(false, spaceFail));
+
+        var ntfsFail = result.Failures.FirstOrDefault(f => f.Contains("NTFS"));
+        checklist.Children.Add(ntfsFail is null
+            ? CheckLine(true, "Target drive is NTFS.")
+            : CheckLine(false, ntfsFail));
+
+        return result.Ok;
+    }
+
+    private static StackPanel CheckLine(bool ok, string text)
+    {
+        var brush = (Brush)Application.Current.Resources[
+            ok ? "SystemFillColorSuccessBrush" : "SystemFillColorCriticalBrush"];
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children =
+            {
+                new FontIcon
+                {
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
+                    Glyph = ok ? "\uE73E" : "\uE711", // CheckMark / Cancel
+                    FontSize = 12,
+                    Foreground = brush,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+                new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap },
+            },
+        };
     }
 
     private async void SetDefaultUser_Click(object s, RoutedEventArgs e)

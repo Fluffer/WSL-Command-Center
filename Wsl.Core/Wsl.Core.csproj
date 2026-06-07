@@ -4,6 +4,11 @@
     <ProjectReference Include="..\Wsl.Contracts\Wsl.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Registry access for GetVhdxInfo (Lxss BasePath lookup); plain net9.0 TFM needs the package. -->
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

@@ -93,6 +93,8 @@ public partial class DeployViewModel : ObservableObject
 
         if (distro is null && fromFile is null)
         { ErrorMessage = "Select a catalog distro or choose a local image file."; return; }
+        if (distro is not null && fromFile is not null)
+        { ErrorMessage = "Pick either a catalog distro or a local image file, not both."; return; }
         if (fromFile is not null && name is null)
         { ErrorMessage = "A name is required when installing from a file."; return; }
 

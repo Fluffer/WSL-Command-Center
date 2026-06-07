@@ -89,6 +89,21 @@ public class DeployViewModelTests
     }
 
     [Fact]
+    public async Task InstallAdvanced_rejects_both_distro_and_file()
+    {
+        var runner = new FakeProcessRunner();
+        var vm = NewVm(runner);
+        vm.AdvancedCatalogEntry = new CatalogEntry("Ubuntu", "Ubuntu");
+        vm.AdvancedFromFile = @"D:\images\arch.wsl";
+        vm.AdvancedName = "arch";
+
+        await vm.InstallAdvancedAsync();
+
+        Assert.NotNull(vm.ErrorMessage);
+        Assert.Empty(runner.AllArgs);
+    }
+
+    [Fact]
     public async Task InstallAdvanced_requires_name_when_from_file()
     {
         var runner = new FakeProcessRunner();

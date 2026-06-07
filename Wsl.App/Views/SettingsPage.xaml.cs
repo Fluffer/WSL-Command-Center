@@ -94,7 +94,8 @@ public sealed partial class SettingsPage : Page
             var resp = await broker.SendAsync(new LaunchDebugShellRequest());
             if (!resp.Success)
             {
-                DiagnosticsErrorBar.Message = resp.Error ?? "Could not open the debug shell.";
+                DiagnosticsErrorBar.Message = string.IsNullOrWhiteSpace(resp.Error)
+                    ? "Could not open the debug shell." : resp.Error;
                 DiagnosticsErrorBar.IsOpen = true;
             }
         }
@@ -193,7 +194,8 @@ public sealed partial class SettingsPage : Page
             else
             {
                 WslPackageInfoBar.Severity = InfoBarSeverity.Error;
-                WslPackageInfoBar.Message = resp.Error ?? "Uninstalling WSL failed.";
+                WslPackageInfoBar.Message = string.IsNullOrWhiteSpace(resp.Error)
+                    ? "Uninstalling WSL failed." : resp.Error;
             }
         }
         catch (System.Exception ex)

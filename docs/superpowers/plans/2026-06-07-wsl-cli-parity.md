@@ -766,9 +766,9 @@ public async Task UnmountDisk_without_disk_unmounts_all()
 
 ### Task 11: Final pass
 
-- [ ] **Step 1:** Full `dotnet build WslCommandCenter.sln` + `dotnet test` (all test projects except `Wsl.Live.Tests` unless it's part of default run — check; live tests hit real WSL, skip if so marked).
-- [ ] **Step 2:** Update `README`/docs if a docs page lists features (check `docs/`).
-- [ ] **Step 3:** Commit any leftovers. Branch ready for merge review.
+- [x] **Step 1:** Full `dotnet build WslCommandCenter.sln` + `dotnet test` (all test projects except `Wsl.Live.Tests` unless it's part of default run — check; live tests hit real WSL, skip if so marked).
+- [x] **Step 2:** Update `README`/docs if a docs page lists features (check `docs/`).
+- [x] **Step 3:** Commit any leftovers. Branch ready for merge review.
 
 ---
 

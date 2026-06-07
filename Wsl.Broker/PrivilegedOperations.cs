@@ -94,9 +94,16 @@ public class PrivilegedOperations
     private async Task<BrokerResponse> MountDisk(MountDiskRequest req, CancellationToken ct)
     {
         // Defense in depth: the UI already disables the system disk row, but the broker is the
-        // privileged boundary, so it re-checks against the same enumeration.
-        if (!req.Vhd && IsSystemDisk(req.Disk))
-            return new BrokerResponse(false, $"Refusing to mount the system disk ({req.Disk}).");
+        // privileged boundary, so it re-checks against the same enumeration. Fail closed: if the
+        // disk cannot be verified, a physical mount is refused rather than waved through.
+        if (!req.Vhd)
+        {
+            var isSystem = IsSystemDisk(req.Disk);
+            if (isSystem is null)
+                return new BrokerResponse(false, "Could not verify the disk against the system disk; refusing to mount.");
+            if (isSystem == true)
+                return new BrokerResponse(false, $"Refusing to mount the system disk ({req.Disk}).");
+        }
 
         var args = new List<string> { "--mount", req.Disk };
         if (req.Vhd) args.Add("--vhd");
@@ -129,7 +136,9 @@ public class PrivilegedOperations
             : Fail(r, "Unmount disk");
     }
 
-    private bool IsSystemDisk(string disk)
+    /// <summary>True/false when the disk could be checked; null when enumeration failed
+    /// (caller must fail closed for physical mounts).</summary>
+    private bool? IsSystemDisk(string disk)
     {
         try
         {
@@ -138,7 +147,7 @@ public class PrivilegedOperations
         }
         catch
         {
-            return false; // enumeration unavailable — wsl.exe itself will reject nonsense input
+            return null;
         }
     }
 

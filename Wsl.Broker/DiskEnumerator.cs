@@ -38,7 +38,9 @@ public sealed class WmiDiskEnumerator : IDiskEnumerator
     {
         try
         {
-            var systemDrive = Environment.GetEnvironmentVariable("SystemDrive") ?? "C:";
+            // Validate before embedding in WQL — env vars are caller-controlled.
+            var systemDrive = Environment.GetEnvironmentVariable("SystemDrive") is { Length: 2 } sd
+                && char.IsAsciiLetter(sd[0]) && sd[1] == ':' ? sd : "C:";
             using var partitions = new ManagementObjectSearcher(
                 $"ASSOCIATORS OF {{Win32_LogicalDisk.DeviceID='{systemDrive}'}} " +
                 "WHERE AssocClass=Win32_LogicalDiskToPartition");

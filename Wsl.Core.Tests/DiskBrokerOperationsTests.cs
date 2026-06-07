@@ -11,6 +11,11 @@ public sealed class FakeDiskEnumerator : IDiskEnumerator
     public IReadOnlyList<DiskInfo> Enumerate() => _disks;
 }
 
+public sealed class ThrowingDiskEnumerator : IDiskEnumerator
+{
+    public IReadOnlyList<DiskInfo> Enumerate() => throw new InvalidOperationException("WMI unavailable");
+}
+
 public class DiskBrokerOperationsTests
 {
     private static readonly DiskInfo SystemDisk =
@@ -21,6 +26,19 @@ public class DiskBrokerOperationsTests
 
     private static PrivilegedOperations Make(FakeProcessRunner runner)
         => new(runner, new FakeDiskEnumerator(SystemDisk, DataDisk));
+
+    [Fact]
+    public async Task MountDisk_fails_closed_when_enumeration_unavailable()
+    {
+        var runner = new FakeProcessRunner();
+        var ops = new PrivilegedOperations(runner, new ThrowingDiskEnumerator());
+
+        var resp = await ops.HandleAsync(new MountDiskRequest(
+            @"\\.\PHYSICALDRIVE2", Vhd: false, Bare: true, null, null, null, null));
+
+        Assert.False(resp.Success);
+        Assert.Null(runner.LastExe); // wsl.exe never invoked
+    }
 
     [Fact]
     public async Task MountDisk_composes_full_arg_set()

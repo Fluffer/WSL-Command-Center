@@ -34,6 +34,22 @@ public class LaunchCommandBuilderTests
     }
 
     [Fact]
+    public void Shell_command_with_quotes_passes_as_single_argument()
+    {
+        var opts = new LaunchOptions { Command = "echo \"a b\"" };
+        Assert.Equal(new[] { "-d", "Ubuntu", "--", "echo \"a b\"" },
+            LaunchCommandBuilder.Build("Ubuntu", opts));
+    }
+
+    [Fact]
+    public void Exec_command_tokenizes_respecting_quotes()
+    {
+        var opts = new LaunchOptions { Command = "python -c \"print('hi')\"", UseExec = true };
+        Assert.Equal(new[] { "-d", "Ubuntu", "--exec", "python", "-c", "print('hi')" },
+            LaunchCommandBuilder.Build("Ubuntu", opts));
+    }
+
+    [Fact]
     public void System_distro_replaces_distro_selection()
     {
         var opts = new LaunchOptions { SystemDistro = true };

@@ -132,10 +132,10 @@ public sealed partial class DashboardPage : Page
 
         var options = new LaunchOptions
         {
-            User = user.Text,
-            WorkingDirectory = cwd.Text,
+            User = user.Text.Trim(),
+            WorkingDirectory = cwd.Text.Trim(),
             ShellType = (WslShellType)shellType.SelectedIndex,
-            Command = command.Text,
+            Command = command.Text.Trim(),
             UseExec = useExec.IsChecked == true,
             SystemDistro = system.IsChecked == true,
         };

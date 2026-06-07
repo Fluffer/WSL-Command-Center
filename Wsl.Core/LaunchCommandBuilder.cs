@@ -1,7 +1,10 @@
 namespace Wsl.Core;
 
 /// <summary>Composes wsl.exe argument vectors for interactive launches.
-/// Pure logic — the actual console window is started app-side (TerminalLauncher).</summary>
+/// Pure logic — the actual console window is started app-side (TerminalLauncher).
+/// Command handling: with "--" the command is appended as a single argument
+/// (the shell parses quotes); with "--exec" it is tokenized quote-aware
+/// (double-quoted segments form one token, quotes stripped).</summary>
 public static class LaunchCommandBuilder
 {
     public static string[] Build(string distro, LaunchOptions o)
@@ -17,10 +20,45 @@ public static class LaunchCommandBuilder
 
         if (!string.IsNullOrWhiteSpace(o.Command))
         {
-            if (o.UseExec) args.Add("--exec");
-            else args.Add("--");
-            args.AddRange(o.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            if (o.UseExec)
+            {
+                args.Add("--exec");
+                args.AddRange(Tokenize(o.Command));
+            }
+            else
+            {
+                args.Add("--");
+                args.Add(o.Command.Trim());
+            }
         }
         return args.ToArray();
+    }
+
+    private static List<string> Tokenize(string command)
+    {
+        var tokens = new List<string>();
+        var current = new System.Text.StringBuilder();
+        var inQuotes = false;
+        var hasContent = false;
+
+        foreach (var c in command)
+        {
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+                hasContent = true;
+            }
+            else if (!inQuotes && char.IsWhiteSpace(c))
+            {
+                if (hasContent) { tokens.Add(current.ToString()); current.Clear(); hasContent = false; }
+            }
+            else
+            {
+                current.Append(c);
+                hasContent = true;
+            }
+        }
+        if (hasContent) tokens.Add(current.ToString());
+        return tokens;
     }
 }

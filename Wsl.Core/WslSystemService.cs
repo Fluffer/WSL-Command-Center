@@ -27,7 +27,10 @@ public class WslSystemService
         {
             var t = line.Trim();
             if (t.StartsWith("Default Distribution:", StringComparison.OrdinalIgnoreCase))
-                distro = t.Split(':', 2)[1].Trim();
+            {
+                var val = t.Split(':', 2)[1].Trim();
+                distro = string.IsNullOrWhiteSpace(val) ? null : val;
+            }
             else if (t.StartsWith("Default Version:", StringComparison.OrdinalIgnoreCase)
                      && int.TryParse(t.Split(':', 2)[1].Trim(), out var v))
                 version = v;
@@ -47,6 +50,10 @@ public class WslSystemService
         }
         return new WslVersionInfo(wsl, kernel, wslg, stdout);
 
-        static string After(string s) => s.Split(':', 2)[1].Trim();
+        static string? After(string s)
+        {
+            var val = s.Split(':', 2)[1].Trim();
+            return string.IsNullOrWhiteSpace(val) ? null : val;
+        }
     }
 }

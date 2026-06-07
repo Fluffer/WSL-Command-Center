@@ -15,7 +15,10 @@ public sealed class WmiDiskEnumerator : IDiskEnumerator
 {
     public IReadOnlyList<DiskInfo> Enumerate()
     {
-        var systemIndex = GetSystemDiskIndex();
+        // Fail closed: without a reliable system-disk identification no disk may be
+        // offered for mounting (PrivilegedOperations refuses mounts when this throws).
+        var systemIndex = GetSystemDiskIndex()
+            ?? throw new InvalidOperationException("Could not identify the system disk.");
         var disks = new List<(uint Index, DiskInfo Info)>();
         using var search = new ManagementObjectSearcher(
             "SELECT DeviceID, Model, SerialNumber, Size, Index FROM Win32_DiskDrive");
@@ -33,8 +36,10 @@ public sealed class WmiDiskEnumerator : IDiskEnumerator
     }
 
     /// <summary>Index of the disk hosting %SystemDrive%, resolved via the
-    /// LogicalDisk→Partition→DiskDrive WMI associations. Pragmatic fallback: disk 0.</summary>
-    private static uint GetSystemDiskIndex()
+    /// LogicalDisk→Partition→DiskDrive WMI associations. Null when it cannot be
+    /// determined — a fixed fallback (e.g. disk 0) would misidentify systems whose
+    /// boot disk is not index 0 and let the system disk slip past the mount guard.</summary>
+    private static uint? GetSystemDiskIndex()
     {
         try
         {
@@ -55,8 +60,8 @@ public sealed class WmiDiskEnumerator : IDiskEnumerator
         }
         catch
         {
-            // WMI association lookup failed — fall back below.
+            // WMI association lookup failed — fall through to "unknown".
         }
-        return 0;
+        return null;
     }
 }

@@ -34,6 +34,8 @@ public static class LaunchCommandBuilder
         return args.ToArray();
     }
 
+    /// <summary>Whitespace-splits except inside double quotes (quotes stripped).
+    /// No escape sequences; an unclosed quote treats the remainder as one token.</summary>
     private static List<string> Tokenize(string command)
     {
         var tokens = new List<string>();

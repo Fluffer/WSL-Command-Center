@@ -50,6 +50,14 @@ public class LaunchCommandBuilderTests
     }
 
     [Fact]
+    public void Exec_command_with_unclosed_quote_keeps_remainder_as_one_token()
+    {
+        var opts = new LaunchOptions { Command = "echo \"a b", UseExec = true };
+        Assert.Equal(new[] { "-d", "Ubuntu", "--exec", "echo", "a b" },
+            LaunchCommandBuilder.Build("Ubuntu", opts));
+    }
+
+    [Fact]
     public void System_distro_replaces_distro_selection()
     {
         var opts = new LaunchOptions { SystemDistro = true };

@@ -18,6 +18,17 @@ public class WslDiskServiceMoveTests
     }
 
     [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Preflight_fails_when_vhdx_size_unknown(long size)
+    {
+        var p = MovePreflight.Evaluate(new Version(2, 4, 13),
+            vhdxSizeBytes: size, targetFreeBytes: 1_000_000_000, targetDriveFormat: "NTFS");
+        Assert.False(p.Ok);
+        Assert.Contains(p.Failures, f => f.Contains("size"));
+    }
+
+    [Theory]
     [InlineData(1, 2, 5)]   // wsl too old
     public void Preflight_fails_on_old_wsl(int maj, int min, int build)
     {

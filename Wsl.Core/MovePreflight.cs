@@ -12,6 +12,8 @@ public static class MovePreflight
         Version wslVersion, long vhdxSizeBytes, long targetFreeBytes, string targetDriveFormat)
     {
         var failures = new List<string>();
+        if (vhdxSizeBytes <= 0)
+            failures.Add("Virtual disk size could not be determined — refusing to evaluate free space.");
         if (wslVersion < MinWslVersion)
             failures.Add($"WSL {MinWslVersion} or newer required for safe move (found {wslVersion}).");
         var needed = (long)(vhdxSizeBytes * 1.1);

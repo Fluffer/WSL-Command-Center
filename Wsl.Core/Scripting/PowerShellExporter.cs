@@ -29,6 +29,10 @@ public sealed class PowerShellExporter : IPowerShellExporter
 
     public string Shutdown() => "wsl.exe --shutdown";
 
+    /// <summary>Mirrors the launch-with-options dialog: the exact args TerminalLauncher passes to wsl.exe.</summary>
+    public string Launch(string name, LaunchOptions options) =>
+        "wsl.exe " + string.Join(" ", LaunchCommandBuilder.Build(name, options).Select(Q));
+
     /// <summary>
     /// The full Setup sequence mirroring the elevated broker: enable both Windows features,
     /// update the kernel, set WSL 2 as default. Must run from an elevated (admin) shell.

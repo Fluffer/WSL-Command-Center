@@ -111,6 +111,11 @@
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE712;" FontSize="14" />
                                     <Button.Flyout>
                                         <MenuFlyout>
+                                            <MenuFlyoutItem Text="Launch with options…" Click="LaunchWithOptions_Click" Tag="{x:Bind Name}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8A7;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
                                             <MenuFlyoutItem Text="Optimize disk (reclaim space)…" Click="Optimize_Click" Tag="{x:Bind Name}">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />

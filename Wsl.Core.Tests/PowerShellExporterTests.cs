@@ -66,6 +66,26 @@ public class PowerShellExporterTests
         => Assert.Equal("wsl.exe --shutdown", _x.Shutdown());
 
     [Fact]
+    public void Launch_DefaultOptions_SelectsDistroOnly()
+        => Assert.Equal("wsl.exe -d Ubuntu", _x.Launch("Ubuntu", new LaunchOptions()));
+
+    [Fact]
+    public void Launch_QuotesArgsWithSpaces()
+        => Assert.Equal("wsl.exe -d \"My Distro\" --cd \"/mnt/c/my dir\"",
+            _x.Launch("My Distro", new LaunchOptions { WorkingDirectory = "/mnt/c/my dir" }));
+
+    [Fact]
+    public void Launch_AllOptions_MirrorsBuilderOrder()
+        => Assert.Equal("wsl.exe -d Ubuntu --user peter --cd ~ --shell-type login -- htop",
+            _x.Launch("Ubuntu", new LaunchOptions
+            {
+                User = "peter",
+                WorkingDirectory = "~",
+                ShellType = WslShellType.Login,
+                Command = "htop",
+            }));
+
+    [Fact]
     public void EnableFeatures_MirrorsBrokerSequence()
         => Assert.Equal(
             "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart\r\n" +

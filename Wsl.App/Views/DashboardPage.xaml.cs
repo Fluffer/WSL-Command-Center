@@ -2,6 +2,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.App.Logic.ViewModels;
+using Wsl.App.Services;
+using Wsl.Core;
 using Wsl.Core.Scripting;
 
 namespace Wsl.App.Views;
@@ -89,6 +91,59 @@ public sealed partial class DashboardPage : Page
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary && combo.SelectedItem is string user)
             await Vm.SetDefaultUserAsync(name, user);
+    }
+
+    private async void LaunchWithOptions_Click(object s, RoutedEventArgs e)
+    {
+        if (s is not FrameworkElement { Tag: string name }) return;
+
+        var user = new TextBox { Header = "User", PlaceholderText = "distro default" };
+        var cwd = new TextBox { Header = "Working directory", PlaceholderText = "~  or  /path  or  C:\\path" };
+        // Items mirror the enum declaration order, so SelectedIndex casts straight to WslShellType.
+        var shellType = new ComboBox
+        {
+            Header = "Shell type",
+            ItemsSource = Enum.GetNames<WslShellType>(),
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var command = new TextBox { Header = "Command", PlaceholderText = "empty = interactive shell" };
+        var useExec = new CheckBox { Content = "Run command without a shell (--exec)" };
+        var system = new CheckBox { Content = "Launch the system distro instead (--system)" };
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = $"Launch '{name}' with options",
+            Content = new StackPanel
+            {
+                Spacing = 8,
+                MinWidth = 360,
+                Children = { user, cwd, shellType, command, useExec, system },
+            },
+            PrimaryButtonText = "Launch",
+            SecondaryButtonText = "Copy PowerShell",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.None) return;
+
+        var options = new LaunchOptions
+        {
+            User = user.Text,
+            WorkingDirectory = cwd.Text,
+            ShellType = (WslShellType)shellType.SelectedIndex,
+            Command = command.Text,
+            UseExec = useExec.IsChecked == true,
+            SystemDistro = system.IsChecked == true,
+        };
+
+        if (result == ContentDialogResult.Primary)
+            TerminalLauncher.Launch(LaunchCommandBuilder.Build(name, options));
+        else
+            CopyCommand(_ps.Launch(name, options));
     }
 
     private async void Start_Click(object s, RoutedEventArgs e)

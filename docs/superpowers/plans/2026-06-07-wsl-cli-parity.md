@@ -282,7 +282,7 @@ public async Task SetDefaultUserAsync((string distro, string user) p)
 - Modify: `Wsl.App.Logic/ViewModels/DashboardViewModel.cs`
 - Modify: `Wsl.App/Views/DashboardPage.xaml` + `.xaml.cs` ("Launch options…" dialog)
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```csharp
 using Wsl.Core;
@@ -327,9 +327,9 @@ public class LaunchCommandBuilderTests
 }
 ```
 
-- [ ] **Step 2:** Run — FAIL.
+- [x] **Step 2:** Run — FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```csharp
 // Wsl.Core/LaunchOptions.cs
@@ -376,9 +376,9 @@ public static class LaunchCommandBuilder
 }
 ```
 
-- [ ] **Step 4:** Run — PASS.
+- [x] **Step 4:** Run — PASS.
 
-- [ ] **Step 5: UI.** Dashboard per-distro menu: "Launch with options…" → ContentDialog: user TextBox, working dir TextBox, shell type ComboBox (Default/Standard/Login/None), command TextBox, "use --exec" CheckBox, "system distro" CheckBox. Launch = open a real console window app-side (in `DashboardPage.xaml.cs` or a small `Wsl.App/Services/TerminalLauncher.cs`):
+- [x] **Step 5: UI.** Dashboard per-distro menu: "Launch with options…" → ContentDialog: user TextBox, working dir TextBox, shell type ComboBox (Default/Standard/Login/None), command TextBox, "use --exec" CheckBox, "system distro" CheckBox. Launch = open a real console window app-side (in `DashboardPage.xaml.cs` or a small `Wsl.App/Services/TerminalLauncher.cs`):
 
 ```csharp
 // Wsl.App/Services/TerminalLauncher.cs
@@ -398,7 +398,7 @@ public static class TerminalLauncher
 
 Also add a "Copy PowerShell" button in the dialog reusing the existing `IPowerShellExporter` pattern (command text: `wsl.exe` + joined args, quote args containing spaces).
 
-- [ ] **Step 6:** Build + tests green. Commit `feat(app): launch distro with custom options (user, cwd, shell type, exec)`.
+- [x] **Step 6:** Build + tests green. Commit `feat(app): launch distro with custom options (user, cwd, shell type, exec)`.
 
 ---
 

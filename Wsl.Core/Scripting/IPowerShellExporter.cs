@@ -13,6 +13,7 @@ public interface IPowerShellExporter
     string Unregister(string name);
     string List();
     string Optimize(string name);
+    string Launch(string name, LaunchOptions options);
     string Shutdown();
     string EnableFeatures();
 }

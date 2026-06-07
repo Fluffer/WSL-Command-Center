@@ -28,6 +28,9 @@
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="8">
+            <muxc:InfoBar IsOpen="{x:Bind Vm.WslStatusSummary, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Informational" IsClosable="False"
+                          Message="{x:Bind Vm.WslStatusSummary, Mode=OneWay}" />
             <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                           Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
             <muxc:InfoBar x:Name="CopiedBar" Severity="Success" IsClosable="True"

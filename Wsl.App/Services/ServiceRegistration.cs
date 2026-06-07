@@ -17,6 +17,7 @@ public static class ServiceRegistration
         // Core (unprivileged) — shared single process runner.
         services.AddSingleton<IProcessRunner, RealProcessRunner>();
         services.AddSingleton<WslDistroService>();
+        services.AddSingleton<WslSystemService>();
         services.AddSingleton<WslDiskService>();
         services.AddSingleton<WslDeployService>();
         services.AddSingleton<WslBackupService>();

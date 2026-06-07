@@ -29,7 +29,7 @@
 
 ### Task 0: Branch
 
-- [ ] **Step 1:** `git checkout -b feature/wsl-cli-parity` (from master, clean tree). No commit.
+- [x] **Step 1:** `git checkout -b feature/wsl-cli-parity` (from master, clean tree). No commit.
 
 ---
 
@@ -45,7 +45,7 @@
 - Modify: `Wsl.App/Views/DashboardPage.xaml` (status InfoBar/card at top)
 - Modify: `Wsl.App/Services/ServiceRegistration.cs` (register `WslSystemService`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```csharp
 // Wsl.Core.Tests/WslSystemServiceTests.cs
@@ -103,9 +103,9 @@ public class WslSystemServiceTests
 }
 ```
 
-- [ ] **Step 2:** Run `dotnet test Wsl.Core.Tests --filter WslSystemServiceTests` — expect FAIL (types missing).
+- [x] **Step 2:** Run `dotnet test Wsl.Core.Tests --filter WslSystemServiceTests` — expect FAIL (types missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```csharp
 // Wsl.Core/WslStatus.cs
@@ -176,13 +176,13 @@ public class WslSystemService
 
 NOTE: if `WslErrorMapper` has a different API than `ThrowIfFailed(ProcessResult)`, use whatever the existing services (`WslDistroService`) actually call — match exactly.
 
-- [ ] **Step 4:** Run tests — expect PASS.
+- [x] **Step 4:** Run tests — expect PASS.
 
-- [ ] **Step 5: Wire into Dashboard.** Inject `WslSystemService` into `DashboardViewModel`; add `[ObservableProperty] private string? _wslStatusSummary;` set during `RefreshAsync` to e.g. `"WSL 2.4.13.0 · kernel 5.15.167.4 · default: Ubuntu (v2)"`. Failures here must NOT break distro refresh — wrap in try/catch, set summary null. Add a slim status line/InfoBar at top of `DashboardPage.xaml` bound to `Vm.WslStatusSummary` (collapsed when null — reuse existing null-to-visibility converter in `Wsl.App/Converters`). Register `WslSystemService` singleton in `ServiceRegistration.cs`. Add ViewModel test in `Wsl.Core.Tests` asserting summary populated after refresh (FakeProcessRunner: enqueue list output then version/status outputs in invocation order — check actual call order in implementation).
+- [x] **Step 5: Wire into Dashboard.** Inject `WslSystemService` into `DashboardViewModel`; add `[ObservableProperty] private string? _wslStatusSummary;` set during `RefreshAsync` to e.g. `"WSL 2.4.13.0 · kernel 5.15.167.4 · default: Ubuntu (v2)"`. Failures here must NOT break distro refresh — wrap in try/catch, set summary null. Add a slim status line/InfoBar at top of `DashboardPage.xaml` bound to `Vm.WslStatusSummary` (collapsed when null — reuse existing null-to-visibility converter in `Wsl.App/Converters`). Register `WslSystemService` singleton in `ServiceRegistration.cs`. Add ViewModel test in `Wsl.Core.Tests` asserting summary populated after refresh (FakeProcessRunner: enqueue list output then version/status outputs in invocation order — check actual call order in implementation).
 
-- [ ] **Step 6:** `dotnet build WslCommandCenter.sln` + full `dotnet test Wsl.Core.Tests` — green.
+- [x] **Step 6:** `dotnet build WslCommandCenter.sln` + full `dotnet test Wsl.Core.Tests` — green.
 
-- [ ] **Step 7:** Commit `feat(core): WSL status and version service with dashboard status line`.
+- [x] **Step 7:** Commit `feat(core): WSL status and version service with dashboard status line`.
 
 ---
 

@@ -49,6 +49,26 @@ public class WslDeployService
         WslErrorMapper.ThrowIfFailed(result, $"Install {name}");
     }
 
+    public async Task InstallCustomAsync(CustomInstallOptions o, CancellationToken ct = default)
+    {
+        if (o.Distro is not null && o.FromFile is not null)
+            throw new ArgumentException("Specify a catalog distro or a local file, not both.");
+        if (o.Distro is null && o.FromFile is null)
+            throw new ArgumentException("Specify a catalog distro or a local file.");
+
+        var args = new List<string> { "--install" };
+        if (o.Distro is not null) args.Add(o.Distro);
+        if (o.FromFile is not null) { args.Add("--from-file"); args.Add(o.FromFile); }
+        if (o.Name is not null) { args.Add("--name"); args.Add(o.Name); }
+        if (o.Location is not null) { args.Add("--location"); args.Add(o.Location); }
+        if (o.Version is not null) { args.Add("--version"); args.Add(o.Version.Value.ToString()); }
+        if (o.WebDownload) args.Add("--web-download");
+        args.Add("--no-launch");
+
+        var result = await _runner.RunAsync("wsl.exe", args.ToArray(), null, ct);
+        WslErrorMapper.ThrowIfFailed(result, $"Install {o.Distro ?? o.FromFile}");
+    }
+
     public async Task ImportTarAsync(string name, string installDir, string tarPath, int version,
                                      CancellationToken ct = default)
     {

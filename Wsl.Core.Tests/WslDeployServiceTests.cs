@@ -57,4 +57,51 @@ public class WslDeployServiceTests
             new[] { "--import", "Custom", @"C:\wsl\custom", @"C:\backups\custom.vhdx", "--vhd", "--version", "2" },
             runner.LastArgs);
     }
+
+    [Fact]
+    public async Task InstallCustomAsync_composes_all_flags()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");
+        var svc = new WslDeployService(runner);
+
+        await svc.InstallCustomAsync(new CustomInstallOptions
+        {
+            Distro = "Ubuntu-24.04",
+            Name = "ubuntu-dev2",
+            Location = @"D:\wsl\ubuntu-dev2",
+            Version = 2,
+            WebDownload = true,
+        });
+
+        Assert.Equal(new[] { "--install", "Ubuntu-24.04", "--name", "ubuntu-dev2",
+            "--location", @"D:\wsl\ubuntu-dev2", "--version", "2",
+            "--web-download", "--no-launch" }, runner.LastArgs);
+    }
+
+    [Fact]
+    public async Task InstallCustomAsync_from_file_replaces_catalog_distro()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "");
+        var svc = new WslDeployService(runner);
+
+        await svc.InstallCustomAsync(new CustomInstallOptions
+        {
+            FromFile = @"D:\images\arch.wsl",
+            Name = "arch-custom",
+        });
+
+        Assert.Equal(new[] { "--install", "--from-file", @"D:\images\arch.wsl",
+            "--name", "arch-custom", "--no-launch" }, runner.LastArgs);
+    }
+
+    [Fact]
+    public async Task InstallCustomAsync_rejects_both_distro_and_from_file()
+    {
+        var svc = new WslDeployService(new FakeProcessRunner());
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            svc.InstallCustomAsync(new CustomInstallOptions
+            { Distro = "Ubuntu", FromFile = @"D:\x.wsl" }));
+    }
 }

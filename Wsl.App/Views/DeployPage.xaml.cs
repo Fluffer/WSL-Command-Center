@@ -58,4 +58,27 @@ public sealed partial class DeployPage : Page
         var folder = await picker.PickSingleFolderAsync();
         if (folder is not null) Vm.ImportInstallDir = folder.Path;
     }
+
+    private void ClearAdvancedCatalog_Click(object s, RoutedEventArgs e)
+        => Vm.AdvancedCatalogEntry = null;
+
+    private async void BrowseAdvancedFile_Click(object s, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+        picker.FileTypeFilter.Add(".wsl");
+        picker.FileTypeFilter.Add(".tar");
+        picker.FileTypeFilter.Add(".gz");
+        var file = await picker.PickSingleFileAsync();
+        if (file is not null) Vm.AdvancedFromFile = file.Path;
+    }
+
+    private async void BrowseAdvancedLocation_Click(object s, RoutedEventArgs e)
+    {
+        var picker = new FolderPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+        picker.FileTypeFilter.Add("*");
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder is not null) Vm.AdvancedLocation = folder.Path;
+    }
 }

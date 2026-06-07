@@ -103,6 +103,73 @@
                     </controls:SettingsCard>
                 </controls:SettingsExpander.Items>
             </controls:SettingsExpander>
+
+            <!-- ===== Advanced install ===== -->
+            <controls:SettingsExpander
+                Header="Advanced install"
+                Description="Install with a custom name, location or WSL version — from the online catalog or a local .wsl/.tar image. Great for running multiple instances of the same distro.">
+                <controls:SettingsExpander.HeaderIcon>
+                    <FontIcon Glyph="&#xE90F;" />
+                </controls:SettingsExpander.HeaderIcon>
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard
+                        Header="Catalog distro"
+                        Description="Pick from the online catalog. Disabled while a local image file is set below — clear one to use the other.">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox ItemsSource="{x:Bind Vm.Catalog, Mode=OneWay}"
+                                      SelectedItem="{x:Bind Vm.AdvancedCatalogEntry, Mode=TwoWay}"
+                                      IsEnabled="{x:Bind Vm.IsAdvancedCatalogEnabled, Mode=OneWay}"
+                                      DisplayMemberPath="FriendlyName" MinWidth="240" />
+                            <Button Content="Clear" Click="ClearAdvancedCatalog_Click" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Local image file"
+                        Description="A .wsl or .tar distribution image installed without downloading. Disabled while a catalog distro is selected above.">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{x:Bind Vm.AdvancedFromFile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{x:Bind Vm.IsAdvancedFileEnabled, Mode=OneWay}"
+                                     MinWidth="240" />
+                            <Button Content="Browse…" Click="BrowseAdvancedFile_Click"
+                                    IsEnabled="{x:Bind Vm.IsAdvancedFileEnabled, Mode=OneWay}" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Name"
+                        Description="Registered distro name. Required for a local image; optional for a catalog distro (use it to install a second instance).">
+                        <TextBox Text="{x:Bind Vm.AdvancedName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 MinWidth="280" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Location"
+                        Description="Optional folder where the distro's virtual disk will live, e.g. on another drive. Leave empty for the WSL default.">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{x:Bind Vm.AdvancedLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     MinWidth="240" />
+                            <Button Content="Browse…" Click="BrowseAdvancedLocation_Click" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="WSL version"
+                        Description="Version 2 is the default and recommended. Version 1 only for special cases (e.g. some network filesystems).">
+                        <ComboBox SelectedIndex="{x:Bind Vm.AdvancedVersionIndex, Mode=TwoWay}" MinWidth="120">
+                            <ComboBoxItem Content="WSL 1" />
+                            <ComboBoxItem Content="WSL 2" />
+                        </ComboBox>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Download from the web"
+                        Description="Bypass the Microsoft Store and download the distro directly (--web-download). Only applies to catalog installs.">
+                        <ToggleSwitch IsOn="{x:Bind Vm.AdvancedWebDownload, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard
+                        Header="Install"
+                        Description="Installed without launching — open it afterwards from the Dashboard to finish first-run setup.">
+                        <Button Content="Install" Command="{x:Bind Vm.InstallAdvancedCommand}"
+                                Style="{StaticResource AccentButtonStyle}" />
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </Page>

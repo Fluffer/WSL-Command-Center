@@ -429,7 +429,7 @@ Also add a "Copy PowerShell" button in the dialog reusing the existing `IPowerSh
 - Modify: `Wsl.App.Logic/ViewModels/DeployViewModel.cs`
 - Modify: `Wsl.App/Views/DeployPage.xaml` + `.xaml.cs` (SettingsExpander "Advanced install")
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```csharp
 [Fact]
@@ -480,7 +480,7 @@ public async Task InstallCustomAsync_rejects_both_distro_and_from_file()
 }
 ```
 
-- [ ] **Step 2:** FAIL. **Step 3: Implement**
+- [x] **Step 2:** FAIL. **Step 3: Implement**
 
 ```csharp
 // Wsl.Core/CustomInstallOptions.cs
@@ -522,8 +522,8 @@ public async Task InstallCustomAsync(CustomInstallOptions o, CancellationToken c
 
 (Match the timeout idiom of the existing `InstallAsync` — if it passes a long/None timeout, do same.)
 
-- [ ] **Step 4:** PASS. **Step 5: UI.** `DeployPage.xaml`: `SettingsExpander` "Advanced install" containing: distro ComboBox (reuse existing online catalog list) OR file picker for `.wsl`/`.tar` (FileOpenPicker, follow the existing import picker in `BackupPage.xaml.cs`), name TextBox, location folder picker, version ComboBox (1/2), web-download CheckBox. Validation in VM: name must be non-empty when FromFile chosen; name not already in `ListAsync` result (collision → ErrorMessage, no call).
-- [ ] **Step 6:** Build + tests green. Commit `feat(app): advanced install — custom name, location, local file, multi-instance`.
+- [x] **Step 4:** PASS. **Step 5: UI.** `DeployPage.xaml`: `SettingsExpander` "Advanced install" containing: distro ComboBox (reuse existing online catalog list) OR file picker for `.wsl`/`.tar` (FileOpenPicker, follow the existing import picker in `BackupPage.xaml.cs`), name TextBox, location folder picker, version ComboBox (1/2), web-download CheckBox. Validation in VM: name must be non-empty when FromFile chosen; name not already in `ListAsync` result (collision → ErrorMessage, no call).
+- [x] **Step 6:** Build + tests green. Commit `feat(app): advanced install — custom name, location, local file, multi-instance`.
 
 ---
 

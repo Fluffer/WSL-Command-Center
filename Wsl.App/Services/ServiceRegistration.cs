@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.Core;
+using Wsl.Core.Snapshots;
 using Wsl.Core.Ipc;
 using Wsl.Core.Settings;
 using Wsl.Core.Scripting;
@@ -47,6 +48,12 @@ public static class ServiceRegistration
         services.AddTransient<DisksViewModel>();
         services.AddTransient<MonitorViewModel>();
         services.AddTransient<NetworkViewModel>();
+        services.AddSingleton<WslSnapshotService>(sp => new WslSnapshotService(
+            sp.GetRequiredService<WslDistroService>(),
+            () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                               "WslCommandCenter", "Snapshots"),
+            sp.GetRequiredService<IProcessRunner>()));
+        services.AddTransient<SnapshotViewModel>();
 
         // Diagnostics services (singletons — lightweight, share process runner)
         services.AddSingleton<WslNetworkService>();

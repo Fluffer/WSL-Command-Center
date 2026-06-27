@@ -9,14 +9,33 @@ public class PowerShellExporterTests
     private readonly PowerShellExporter _x = new();
 
     [Fact]
+    public void Export_PreviewIsStatePreserving()
+    {
+        var s = _x.Export("Ubuntu", @"C:\b\u.tar", ExportFormat.Tar);
+        Assert.Contains("--list --running --quiet", s);
+        Assert.Contains("wsl.exe --shutdown", s);
+        Assert.Contains("--export Ubuntu", s);
+        Assert.Contains("-- true", s);
+        Assert.Contains("$LASTEXITCODE -ne 0", s);
+    }
+
+    [Fact]
     public void Export_Tar_NoSpaces_NoQuotes()
-        => Assert.Equal(@"wsl.exe --export Ubuntu C:\b.tar --format tar",
-            _x.Export("Ubuntu", @"C:\b.tar", ExportFormat.Tar));
+    {
+        var s = _x.Export("Ubuntu", @"C:\b.tar", ExportFormat.Tar);
+        Assert.Contains("--export Ubuntu", s);
+        Assert.Contains(@"C:\b.tar", s);
+        Assert.Contains("--format tar", s);
+    }
 
     [Fact]
     public void Export_TarGz_QuotesArgsWithSpaces()
-        => Assert.Equal("wsl.exe --export \"My Distro\" \"C:\\my backups\\d.tar\" --format tar.gz",
-            _x.Export("My Distro", @"C:\my backups\d.tar", ExportFormat.TarGz));
+    {
+        var s = _x.Export("My Distro", @"C:\my backups\d.tar", ExportFormat.TarGz);
+        Assert.Contains("--export \"My Distro\"", s);
+        Assert.Contains(@"""C:\my backups\d.tar""", s);
+        Assert.Contains("--format tar.gz", s);
+    }
 
     [Fact]
     public void Restore_Vhd_IncludesVhdAndVersion()

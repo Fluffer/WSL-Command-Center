@@ -32,6 +32,10 @@ public partial class SnapshotViewModel : ObservableObject
         ReloadSnapshots();
     });
 
+    public async Task<IReadOnlyList<string>> RunningDistrosAsync() =>
+        (await _distros.ListAsync())
+            .Where(d => d.State == Wsl.Core.DistroState.Running).Select(d => d.Name).ToList();
+
     [RelayCommand]
     public Task CreateAsync() => SelectedDistro is null ? Task.CompletedTask : Guarded(async () =>
     {

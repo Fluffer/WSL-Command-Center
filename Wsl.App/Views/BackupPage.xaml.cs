@@ -13,6 +13,7 @@ public sealed partial class BackupPage : Page
 {
     public BackupViewModel Vm { get; }
     private readonly IPowerShellExporter _ps;
+    private bool _exportDialogOpen;
 
     public BackupPage()
     {
@@ -20,6 +21,33 @@ public sealed partial class BackupPage : Page
         _ps = App.Services.GetRequiredService<IPowerShellExporter>();
         InitializeComponent();
         _ = Vm.LoadDistrosAsync();
+    }
+
+    private async void Export_Click(object sender, RoutedEventArgs e)
+    {
+        if (_exportDialogOpen) return;
+        _exportDialogOpen = true;
+        try
+        {
+            if (Vm.ExportCommand.IsRunning) return;
+            var running = await Vm.RunningDistrosAsync();
+            if (running.Count > 0)
+            {
+                var dialog = new ContentDialog
+                {
+                    XamlRoot = XamlRoot,
+                    Title = "Stop running distros for backup?",
+                    Content = $"This briefly stops ALL running distros ({string.Join(", ", running)}) " +
+                              "and restarts them after the backup completes. Continue?",
+                    PrimaryButtonText = "Stop & back up",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                };
+                if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            }
+            await Vm.ExportCommand.ExecuteAsync(null);
+        }
+        finally { _exportDialogOpen = false; }
     }
 
     private void CopyExportPs_Click(object s, RoutedEventArgs e)

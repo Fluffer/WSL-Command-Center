@@ -38,6 +38,20 @@ public class WslScheduleServiceTests
     }
 
     [Fact]
+    public void BuildScript_GuardsExitCodeBeforePrune()
+    {
+        var (svc, _, _) = Make();
+        var s = new BackupSchedule("Ubuntu", @"C:\backups", ExportFormat.Tar,
+                                   ScheduleFrequency.Daily, "02:30", 7);
+        var script = svc.BuildScript(s);
+
+        Assert.Contains("$LASTEXITCODE -ne 0", script);
+        // Guard must appear before the prune so a failed export cannot delete old backups.
+        Assert.True(script.IndexOf("$LASTEXITCODE -ne 0", StringComparison.Ordinal)
+                    < script.IndexOf("Remove-Item", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void BuildScript_Vhd_UsesVhdxExtensionButVhdFormatFlag()
     {
         var (svc, _, _) = Make();
@@ -121,5 +135,25 @@ public class WslScheduleServiceTests
         var a = runner.LastArgs!;
         Assert.Equal("schtasks.exe", runner.LastExe);
         Assert.Equal(new[] { "/Delete", "/TN", "WslCmdCenter_Backup_Ubuntu", "/F" }, a);
+    }
+
+    [Fact]
+    public void BuildScript_IsStatePreserving()
+    {
+        var svc = new WslScheduleService(new FakeProcessRunner(), Path.GetTempPath());
+        var s = new Wsl.Core.Scheduling.BackupSchedule(
+            "Ubuntu", @"C:\backups", ExportFormat.Tar,
+            Wsl.Core.Scheduling.ScheduleFrequency.Daily, "02:00", 3);
+        var script = svc.BuildScript(s);
+
+        Assert.Contains("[Console]::OutputEncoding", script);          // UTF-16 fix
+        Assert.Contains("--list --running --quiet", script);           // capture running
+        Assert.Contains("wsl.exe --shutdown", script);                 // release VHDs
+        Assert.Contains("--export 'Ubuntu' $out --format tar", script);// export
+        Assert.Contains("finally", script);                            // restart wrapper
+        Assert.Contains("-- true", script);                            // restart command
+        // prune sits inside try (before finally) so a failed export keeps old backups
+        Assert.True(script.IndexOf("Remove-Item", StringComparison.Ordinal)
+                    < script.IndexOf("finally", StringComparison.Ordinal));
     }
 }

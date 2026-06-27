@@ -7,13 +7,16 @@ public class WslSnapshotService
     private readonly WslDistroService _distros;
     private readonly Func<string> _root;
     private readonly IProcessRunner _runner;
+    private readonly StatePreservingExport _preserving;
 
     public WslSnapshotService(WslDistroService distros,
-        Func<string> storeRootProvider, IProcessRunner runner)
+        Func<string> storeRootProvider, IProcessRunner runner,
+        StatePreservingExport preserving)
     {
         _distros = distros;
         _root = storeRootProvider;
         _runner = runner;
+        _preserving = preserving;
     }
 
     private string DistroDir(string distro)
@@ -29,9 +32,13 @@ public class WslSnapshotService
         var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
         var dir = DistroDir(distro);
         var vhdx = Path.Combine(dir, stamp + ".vhdx");
-        var r = await _runner.RunAsync("wsl.exe",
-            new[] { "--export", distro, vhdx, "--vhd" }, null, ct);
-        WslErrorMapper.ThrowIfFailed(r, $"Snapshot export {distro}");
+
+        await _preserving.RunAsync(async c =>
+        {
+            var r = await _runner.RunAsync("wsl.exe",
+                new[] { "--export", distro, vhdx, "--vhd" }, null, c);
+            WslErrorMapper.ThrowIfFailed(r, $"Snapshot export {distro}");
+        }, ct);
 
         long bytes = File.Exists(vhdx) ? new FileInfo(vhdx).Length : 0;
         var snap = new Snapshot(distro, label, DateTime.UtcNow, bytes, "vhd", wslVersion,

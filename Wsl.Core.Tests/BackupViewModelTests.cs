@@ -12,7 +12,10 @@ public class BackupViewModelTests
         "  Debian    Running   2\r\n";
 
     private static BackupViewModel NewVm(FakeProcessRunner runner)
-        => new(new WslBackupService(runner), new WslDistroService(runner), new WslDeployService(runner));
+    {
+        var distros = new WslDistroService(runner);
+        return new(new WslBackupService(runner), distros, new WslDeployService(runner), new StatePreservingExport(distros));
+    }
 
     /// <summary>Creates a real temp .vhdx file so the VM's File.Exists guard passes.</summary>
     private static string TempVhdx()
@@ -26,6 +29,7 @@ public class BackupViewModelTests
     public async Task Export_calls_export_with_selected_format()
     {
         var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME      STATE     VERSION\r\n* Ubuntu    Stopped   2\r\n"); // RunningAsync
         var vm = NewVm(runner);
         vm.ExportDistro = "Ubuntu";
         vm.ExportPath = @"C:\b\ubuntu.vhdx";
@@ -33,9 +37,10 @@ public class BackupViewModelTests
 
         await vm.ExportAsync();
 
-        Assert.Equal(
-            new[] { "--export", "Ubuntu", @"C:\b\ubuntu.vhdx", "--format", "vhd" },
-            runner.AllArgs[0]);
+        // Flow: list (queued), shutdown (auto), export, [no restart since Stopped]
+        Assert.Contains(runner.AllArgs, a =>
+            a.Length == 5 && a[0] == "--export" && a[1] == "Ubuntu" &&
+            a[2] == @"C:\b\ubuntu.vhdx" && a[3] == "--format" && a[4] == "vhd");
         Assert.NotNull(vm.StatusMessage);
     }
 
@@ -61,7 +66,8 @@ public class BackupViewModelTests
     public async Task Export_failure_sets_error()
     {
         var runner = new FakeProcessRunner();
-        runner.Enqueue(1, "", "There is no distribution with the supplied name.");
+        runner.Enqueue(0, ""); // list (RunningAsync)
+        runner.Enqueue(1, "", "There is no distribution with the supplied name."); // export fails
         var vm = NewVm(runner);
         vm.ExportDistro = "Ghost";
         vm.ExportPath = @"C:\b\x.tar";
@@ -193,5 +199,24 @@ public class BackupViewModelTests
             Assert.Empty(runner.AllArgs);
         }
         finally { File.Delete(vhdx); }
+    }
+
+    [Fact]
+    public async Task ExportAsync_ShutsDownBeforeExport_AndRestartsRunning()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME    STATE    VERSION\n* Ubuntu  Running  2\n"); // RunningAsync
+        var distros = new WslDistroService(runner);
+        var vm = new BackupViewModel(new WslBackupService(runner), distros,
+            new WslDeployService(runner), new StatePreservingExport(distros));
+        vm.ExportDistro = "Ubuntu"; vm.ExportPath = @"C:\b\u.tar"; vm.ExportFormat = ExportFormat.Tar;
+
+        await vm.ExportAsync();
+
+        var flat = runner.AllArgs;
+        var shutdownIdx = flat.FindIndex(a => a.Length == 1 && a[0] == "--shutdown");
+        var exportIdx = flat.FindIndex(a => a.Length >= 1 && a[0] == "--export");
+        Assert.True(shutdownIdx >= 0 && exportIdx > shutdownIdx);
+        Assert.Contains(flat, a => a.Length >= 2 && a[0] == "-d" && a[1] == "Ubuntu"); // restarted
     }
 }

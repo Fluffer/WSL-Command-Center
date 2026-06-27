@@ -10,15 +10,20 @@ public partial class BackupViewModel : ObservableObject
     private readonly WslBackupService _backup;
     private readonly WslDistroService _distros;
     private readonly WslDeployService _deploy;
+    private readonly StatePreservingExport _preserving;
 
-    public BackupViewModel(WslBackupService backup, WslDistroService distros, WslDeployService deploy)
+    public BackupViewModel(WslBackupService backup, WslDistroService distros, WslDeployService deploy, StatePreservingExport preserving)
     {
         _backup = backup;
         _distros = distros;
         _deploy = deploy;
+        _preserving = preserving;
     }
 
     public ObservableCollection<string> Distros { get; } = new();
+
+    /// <summary>Running distros — the page warns about these before exporting.</summary>
+    public Task<IReadOnlyList<string>> RunningDistrosAsync() => _preserving.RunningAsync();
 
     [RelayCommand]
     public async Task LoadDistrosAsync()
@@ -55,7 +60,7 @@ public partial class BackupViewModel : ObservableObject
     {
         await Guarded(async () =>
         {
-            await _backup.ExportAsync(ExportDistro, ExportPath, ExportFormat);
+            await _preserving.RunAsync(c => _backup.ExportAsync(ExportDistro, ExportPath, ExportFormat, c));
             StatusMessage = $"Exported {ExportDistro} → {ExportPath}";
         });
     }

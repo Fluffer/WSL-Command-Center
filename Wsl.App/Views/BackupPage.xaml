@@ -56,7 +56,7 @@
                         Header="Export"
                         Description="Run the export, or copy the equivalent wsl.exe command.">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Export" Command="{x:Bind Vm.ExportCommand}"
+                            <Button Content="Export" Click="Export_Click"
                                     Style="{StaticResource AccentButtonStyle}" />
                             <Button Click="CopyExportPs_Click"
                                     ToolTipService.ToolTip="Copy the equivalent wsl.exe command to the clipboard">

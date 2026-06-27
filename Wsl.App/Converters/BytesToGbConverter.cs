@@ -11,6 +11,7 @@ public sealed class BytesToGbConverter : IValueConverter
         {
             long l => l,
             int i  => (long)i,
+            ulong u => (long)u,
             _      => 0L,
         };
         return $"{bytes / 1_073_741_824.0:F1} GB";

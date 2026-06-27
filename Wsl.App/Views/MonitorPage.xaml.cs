@@ -11,14 +11,20 @@ public sealed partial class MonitorPage : Page
 {
     public MonitorViewModel Vm { get; }
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private bool _isLoaded;
 
     public MonitorPage()
     {
         Vm = App.Services.GetRequiredService<MonitorViewModel>();
         InitializeComponent();
         _timer.Tick += async (_, _) => await Vm.RefreshAsync();
-        Loaded += async (_, _) => { await Vm.RefreshAsync(); _timer.Start(); };
-        Unloaded += (_, _) => _timer.Stop();
+        Loaded += async (_, _) =>
+        {
+            _isLoaded = true;
+            await Vm.RefreshAsync();
+            if (_isLoaded) _timer.Start();
+        };
+        Unloaded += (_, _) => { _isLoaded = false; _timer.Stop(); };
     }
 
     private async void Terminate_Click(object sender, RoutedEventArgs e)

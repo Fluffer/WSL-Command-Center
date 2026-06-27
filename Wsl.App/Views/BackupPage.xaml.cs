@@ -22,6 +22,26 @@ public sealed partial class BackupPage : Page
         _ = Vm.LoadDistrosAsync();
     }
 
+    private async void Export_Click(object sender, RoutedEventArgs e)
+    {
+        var running = await Vm.RunningDistrosAsync();
+        if (running.Count > 0)
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Stop running distros for backup?",
+                Content = $"This briefly stops ALL running distros ({string.Join(", ", running)}) " +
+                          "and restarts them after the backup completes. Continue?",
+                PrimaryButtonText = "Stop & back up",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        }
+        await Vm.ExportCommand.ExecuteAsync(null);
+    }
+
     private void CopyExportPs_Click(object s, RoutedEventArgs e)
     {
         var cmd = _ps.Export(Vm.ExportDistro, Vm.ExportPath, Vm.ExportFormat);

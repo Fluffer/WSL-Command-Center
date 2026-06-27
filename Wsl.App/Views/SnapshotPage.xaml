@@ -36,7 +36,7 @@
                          VerticalAlignment="Center"
                          AutomationProperties.AutomationId="SnapshotLabelTextBox" />
                 <Button Content="Create snapshot"
-                        Command="{x:Bind Vm.CreateCommand}"
+                        Click="Create_Click"
                         Style="{StaticResource AccentButtonStyle}"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="CreateSnapshotButton" />

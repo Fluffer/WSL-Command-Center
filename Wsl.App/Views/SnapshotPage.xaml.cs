@@ -24,6 +24,26 @@ public sealed partial class SnapshotPage : Page
         };
     }
 
+    private async void Create_Click(object sender, RoutedEventArgs e)
+    {
+        var running = await Vm.RunningDistrosAsync();
+        if (running.Count > 0)
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Stop running distros for snapshot?",
+                Content = $"This briefly stops ALL running distros ({string.Join(", ", running)}) " +
+                          "and restarts them after the snapshot completes. Continue?",
+                PrimaryButtonText = "Stop & snapshot",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        }
+        await Vm.CreateCommand.ExecuteAsync(null);
+    }
+
     private async void DistroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_loaded || Vm.IsBusy) return;

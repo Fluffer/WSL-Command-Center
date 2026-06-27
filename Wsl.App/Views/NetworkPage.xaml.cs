@@ -18,8 +18,8 @@ public sealed partial class NetworkPage : Page
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            _loaded = true;
             await Vm.RefreshAsync();
+            _loaded = true;
         };
     }
 

@@ -21,6 +21,7 @@ public sealed partial class MainWindow : Window
         AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
 
         _pages["Dashboard"] = typeof(Views.DashboardPage);
+        _pages["Monitor"] = typeof(Views.MonitorPage);
         _pages["Deploy"] = typeof(Views.DeployPage);
         _pages["Backup"] = typeof(Views.BackupPage);
         _pages["Disks"] = typeof(Views.DisksPage);

@@ -4,6 +4,7 @@ using Wsl.Core.Ipc;
 using Wsl.Core.Settings;
 using Wsl.Core.Scripting;
 using Wsl.Core.Scheduling;
+using Wsl.Core.Monitoring;
 using Wsl.App.Logic.ViewModels;
 
 namespace Wsl.App.Services;
@@ -43,6 +44,12 @@ public static class ServiceRegistration
         services.AddTransient<SetupViewModel>();           // Task 21
         services.AddTransient<ScheduleViewModel>();
         services.AddTransient<DisksViewModel>();
+        services.AddTransient<MonitorViewModel>();
+
+        // Monitoring probes + service (singletons — share CPU baseline across refreshes)
+        services.AddSingleton<IVmProcessProbe, VmProcessProbe>();
+        services.AddSingleton<IVhdxSizeProbe, RegistryVhdxSizeProbe>();
+        services.AddSingleton<WslMonitorService>();
 
         return services.BuildServiceProvider();
     }

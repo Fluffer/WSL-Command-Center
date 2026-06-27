@@ -34,53 +34,40 @@ public sealed partial class SnapshotPage : Page
     {
         if (sender is not FrameworkElement { DataContext: Snapshot snap }) return;
 
-        var newName = new TextBox
+        // Step 1 — name dialog only (no picker embedded inside a modal)
+        var nameBox = new TextBox
         {
             Header = "New distro name",
             PlaceholderText = $"{snap.Distro}-clone",
             MinWidth = 280,
         };
-        var installDirText = new TextBlock
-        {
-            Text = "No folder selected.",
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
-        };
-        var browseBtn = new Button { Content = "Choose install folder…" };
-        string? installDir = null;
-
-        browseBtn.Click += async (_, _) =>
-        {
-            var picker = new FolderPicker();
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
-            picker.FileTypeFilter.Add("*");
-            var folder = await picker.PickSingleFolderAsync();
-            if (folder is null) return;
-            installDir = folder.Path;
-            installDirText.Text = installDir;
-        };
-
-        var dialog = new ContentDialog
+        var nameDialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
             Title = $"Clone snapshot '{snap.Label}'",
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                MinWidth = 360,
-                Children = { newName, browseBtn, installDirText },
-            },
-            PrimaryButtonText = "Restore as clone",
+            Content = nameBox,
+            PrimaryButtonText = "Clone",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
         };
 
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        if (await nameDialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+        var name = nameBox.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
         {
-            var name = newName.Text.Trim();
-            if (string.IsNullOrWhiteSpace(name) || installDir is null) return;
-            await Vm.RestoreCloneCommand.ExecuteAsync((snap, name, installDir));
+            Vm.ErrorMessage = "Enter a name for the cloned distro.";
+            return;
         }
+
+        // Step 2 — folder picker after dialog is fully dismissed
+        var picker = new FolderPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowHandleHost));
+        picker.FileTypeFilter.Add("*");
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder is null) return;
+
+        await Vm.RestoreCloneCommand.ExecuteAsync((snap, name, folder.Path));
     }
 
     private async void RestoreOverwrite_Click(object sender, RoutedEventArgs e)

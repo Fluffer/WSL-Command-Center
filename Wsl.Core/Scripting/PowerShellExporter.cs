@@ -7,8 +7,17 @@ namespace Wsl.Core.Scripting;
 /// </summary>
 public sealed class PowerShellExporter : IPowerShellExporter
 {
-    public string Export(string name, string outPath, ExportFormat fmt) =>
-        $"wsl.exe --export {Q(name)} {Q(outPath)} --format {FormatFlag(fmt)}";
+    public string Export(string name, string outPath, ExportFormat fmt) => string.Join("\r\n", new[]
+    {
+        "$running = @(wsl.exe --list --running --quiet | ForEach-Object { $_.Trim() } | Where-Object { $_ })",
+        "wsl.exe --shutdown",
+        "try {",
+        $"    wsl.exe --export {Q(name)} {Q(outPath)} --format {FormatFlag(fmt)}",
+        "}",
+        "finally {",
+        "    foreach ($d in $running) { wsl.exe -d $d -- true }",
+        "}",
+    });
 
     public string Restore(string name, string installDir, string archivePath, ExportFormat sourceFmt, int version) =>
         sourceFmt == ExportFormat.Vhd

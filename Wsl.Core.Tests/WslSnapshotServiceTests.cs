@@ -9,12 +9,14 @@ public class WslSnapshotServiceTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "wslcc-snap-" + Guid.NewGuid().ToString("N"));
 
     private WslSnapshotService Build(FakeProcessRunner runner) => new(
-        new WslDistroService(runner), () => _root, runner);
+        new WslDistroService(runner), () => _root, runner,
+        new StatePreservingExport(new WslDistroService(runner)));
 
     [Fact]
     public async Task Create_WritesVhdxSidecar_ThenListAndDelete()
     {
         var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME    STATE    VERSION\n  Ubuntu  Stopped  2\n"); // RunningAsync list
         runner.Enqueue(0, ""); // export
         var svc = Build(runner);
 
@@ -36,6 +38,7 @@ public class WslSnapshotServiceTests : IDisposable
     public async Task RestoreOverwrite_Throws_WhenDistroRunning()
     {
         var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME    STATE    VERSION\n  Ubuntu  Stopped  2\n"); // RunningAsync list
         runner.Enqueue(0, ""); // export
         var svc = Build(runner);
         var snap = await svc.CreateAsync("Ubuntu", "x", 2);
@@ -49,6 +52,7 @@ public class WslSnapshotServiceTests : IDisposable
     public async Task RestoreOverwrite_Throws_AndDoesNotUnregister_WhenSnapshotFileMissing()
     {
         var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME    STATE    VERSION\n  Ubuntu  Stopped  2\n"); // RunningAsync list
         runner.Enqueue(0, ""); // export
         var svc = Build(runner);
         var snap = await svc.CreateAsync("Ubuntu", "x", 2);
@@ -110,6 +114,22 @@ public class WslSnapshotServiceTests : IDisposable
         {
             if (Directory.Exists(siblingDir)) Directory.Delete(siblingDir, true);
         }
+    }
+
+    [Fact]
+    public async Task Create_ShutsDownBeforeExport()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "  NAME    STATE    VERSION\n* Ubuntu  Running  2\n"); // RunningAsync list
+        var svc = Build(runner);
+        await svc.CreateAsync("Ubuntu", "lbl", 2);
+
+        var flat = runner.AllArgs;
+        var shutdownIdx = flat.FindIndex(a => a.Length == 1 && a[0] == "--shutdown");
+        var exportIdx = flat.FindIndex(a => a.Length >= 1 && a[0] == "--export");
+        Assert.True(shutdownIdx >= 0 && exportIdx > shutdownIdx, "shutdown must precede export");
+        // Ubuntu was running -> restarted in finally after export
+        Assert.Contains(flat, a => a.Length >= 2 && a[0] == "-d" && a[1] == "Ubuntu");
     }
 
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }

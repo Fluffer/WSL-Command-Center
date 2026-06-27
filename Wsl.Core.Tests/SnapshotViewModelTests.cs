@@ -16,7 +16,8 @@ public class SnapshotViewModelTests : IDisposable
         var runner = new FakeProcessRunner();
         runner.Enqueue(0, "  NAME    STATE    VERSION\n* Ubuntu  Running  2\n"); // LoadAsync distro list
         runner.Enqueue(0, ""); // export
-        var svc = new WslSnapshotService(new WslDistroService(runner), () => _root, runner);
+        var svc = new WslSnapshotService(new WslDistroService(runner), () => _root, runner,
+            new StatePreservingExport(new WslDistroService(runner)));
         var vm = new SnapshotViewModel(svc, new WslDistroService(runner));
 
         await vm.LoadAsync();

@@ -53,7 +53,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<WslDistroService>(),
             () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                                "WslCommandCenter", "Snapshots"),
-            sp.GetRequiredService<IProcessRunner>()));
+            sp.GetRequiredService<IProcessRunner>(),
+            sp.GetRequiredService<StatePreservingExport>()));
         services.AddTransient<SnapshotViewModel>();
 
         // Diagnostics services (singletons — lightweight, share process runner)

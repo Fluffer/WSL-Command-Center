@@ -31,6 +31,11 @@ public class WslMonitorService
             _prev[name] = SampleFromStat(r.StdOut);
             rows.Add(m);
         }
+
+        // Prune stale baselines for distros no longer running
+        foreach (var key in _prev.Keys.Except(runningDistros).ToList())
+            _prev.Remove(key);
+
         return new MonitorSnapshot(vm, rows);
     }
 
@@ -51,14 +56,16 @@ public class WslMonitorService
         {
             var dTotal = cur.Total - prev.Total;
             var dBusy = cur.Busy - prev.Busy;
-            cpuPct = Math.Round(100.0 * dBusy / dTotal, 1);
+            cpuPct = dBusy >= 0
+                ? Math.Max(0, Math.Round(100.0 * dBusy / dTotal, 1))
+                : 0;
         }
 
         var (used, total) = ParseDf(df);
         return new DistroMetrics(name, cpuPct, memUsed, memTotal, used, total);
     }
 
-    public static CpuSample SampleFromStat(string combined)
+    private static CpuSample SampleFromStat(string combined)
     {
         var parts = combined.Replace("\r", "").Split("---", StringSplitOptions.None);
         return ParseStat(parts.Length > 1 ? parts[1] : "");
@@ -82,22 +89,41 @@ public class WslMonitorService
             if (!line.StartsWith("cpu ") && !line.StartsWith("cpu\t")) continue;
             var tok = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             // tok[0]="cpu"; fields: user nice system idle iowait irq softirq steal guest guest_nice
-            long total = 0, idle = 0;
+            // Require at least the idle field at tok[4]; fewer fields means malformed line
+            if (tok.Length < 5) return new CpuSample(0, 0);
+            long total = 0, idle = 0, iowait = 0;
             for (int i = 1; i < tok.Length; i++)
-                if (long.TryParse(tok[i], out var v)) { total += v; if (i == 4) idle = v; }
-            return new CpuSample(total - idle, total);
+            {
+                if (long.TryParse(tok[i], out var v))
+                {
+                    total += v;
+                    if (i == 4) idle = v;
+                    if (i == 5) iowait = v;
+                }
+            }
+            return new CpuSample(total - idle - iowait, total);
         }
         return new CpuSample(0, 0);
     }
 
     private static (long used, long total) ParseDf(string df)
     {
+        // Flatten all non-header lines into one token list to handle wrapped lines,
+        // overlay/tmpfs/none device names, and device paths with spaces.
+        var allTok = new List<string>();
         foreach (var line in df.Split('\n'))
         {
-            if (!line.StartsWith("/")) continue; // device row
+            if (line.Contains("Filesystem")) continue; // skip header
             var tok = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-            // Filesystem 1B-blocks Used Available Use% Mounted
-            if (tok.Length >= 4 && long.TryParse(tok[1], out var t) && long.TryParse(tok[2], out var u))
+            allTok.AddRange(tok);
+        }
+        // Find the Use% token (ends with '%'); total is 3 positions before, used is 2 positions before.
+        for (int k = 0; k < allTok.Count; k++)
+        {
+            if (!allTok[k].EndsWith("%")) continue;
+            if (k >= 3
+                && long.TryParse(allTok[k - 3], out var t)
+                && long.TryParse(allTok[k - 2], out var u))
                 return (u, t);
         }
         return (0, 0);

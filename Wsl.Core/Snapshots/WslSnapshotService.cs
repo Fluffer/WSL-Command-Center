@@ -4,15 +4,13 @@ namespace Wsl.Core.Snapshots;
 
 public class WslSnapshotService
 {
-    private readonly WslBackupService _backup;
     private readonly WslDistroService _distros;
     private readonly Func<string> _root;
     private readonly IProcessRunner _runner;
 
-    public WslSnapshotService(WslBackupService backup, WslDistroService distros,
+    public WslSnapshotService(WslDistroService distros,
         Func<string> storeRootProvider, IProcessRunner runner)
     {
-        _backup = backup;
         _distros = distros;
         _root = storeRootProvider;
         _runner = runner;
@@ -80,9 +78,15 @@ public class WslSnapshotService
         if (running)
             throw new WslException(WslErrorKind.CommandFailed,
                 $"'{snap.Distro}' is running. Terminate it before overwrite-restore.");
+
+        Directory.CreateDirectory(installDir);
+
+        if (!File.Exists(snap.VhdxPath) || new FileInfo(snap.VhdxPath).Length == 0)
+            throw new WslException(WslErrorKind.CommandFailed,
+                $"Snapshot file missing or empty: {snap.VhdxPath}. Refusing to overwrite '{snap.Distro}'.");
+
         var unreg = await _runner.RunAsync("wsl.exe", new[] { "--unregister", snap.Distro }, null, ct);
         WslErrorMapper.ThrowIfFailed(unreg, $"Unregister {snap.Distro}");
-        Directory.CreateDirectory(installDir);
         var imp = await _runner.RunAsync("wsl.exe",
             new[] { "--import", snap.Distro, installDir, snap.VhdxPath, "--vhd" }, null, ct);
         WslErrorMapper.ThrowIfFailed(imp, $"Restore overwrite {snap.Distro}");
@@ -90,10 +94,22 @@ public class WslSnapshotService
 
     public void Delete(Snapshot snap)
     {
-        if (File.Exists(snap.VhdxPath)) File.Delete(snap.VhdxPath);
-        if (File.Exists(snap.SidecarPath)) File.Delete(snap.SidecarPath);
+        var root = Path.GetFullPath(_root());
+        foreach (var p in new[] { snap.VhdxPath, snap.SidecarPath })
+        {
+            if (string.IsNullOrEmpty(p)) continue;
+            var full = Path.GetFullPath(p);
+            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) continue;
+            if (File.Exists(full)) File.Delete(full);
+        }
     }
 
-    private static string Sanitize(string name) =>
-        string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+    private static string Sanitize(string name)
+    {
+        var safe = string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        if (safe is "." or ".." || safe.Contains("..") || safe.StartsWith("-") ||
+            safe.Contains('/') || safe.Contains('\\'))
+            throw new ArgumentException($"Invalid distro name for snapshot store: '{name}'.");
+        return safe;
+    }
 }

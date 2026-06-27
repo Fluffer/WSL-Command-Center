@@ -6,6 +6,18 @@ public class WslDistroConfig
     public bool? Systemd { get; set; }            // [boot] systemd
     public bool? AutomountEnabled { get; set; }   // [automount] enabled
     public string? Hostname { get; set; }         // [network] hostname
+    public bool? MountFsTab { get; set; }          // [automount] mountFsTab
+    public string? AutomountRoot { get; set; }     // [automount] root
+    public string? AutomountOptions { get; set; }  // [automount] options
+    public bool? InteropEnabled { get; set; }      // [interop] enabled
+    public bool? AppendWindowsPath { get; set; }   // [interop] appendWindowsPath
+    public bool? GenerateHosts { get; set; }       // [network] generateHosts
+    public bool? GenerateResolvConf { get; set; }  // [network] generateResolvConf
+    public string? Dns { get; set; }               // [network] dns
+    public string? BootCommand { get; set; }       // [boot] command
+    public bool? ProtectBinfmt { get; set; }       // [boot] protectBinfmt
+    public bool? GpuEnabled { get; set; }          // [gpu] enabled
+    public bool? UseWindowsTimezone { get; set; }  // [time] useWindowsTimezone
 
     public Dictionary<string, Dictionary<string, string>> Passthrough { get; set; }
         = new(StringComparer.OrdinalIgnoreCase);
@@ -23,6 +35,18 @@ public class WslDistroConfig
                     ("boot", "systemd") => Assign(() => cfg.Systemd = Bool(value)),
                     ("automount", "enabled") => Assign(() => cfg.AutomountEnabled = Bool(value)),
                     ("network", "hostname") => Assign(() => cfg.Hostname = value),
+                    ("automount", "mountfstab") => Assign(() => cfg.MountFsTab = Bool(value)),
+                    ("automount", "root") => Assign(() => cfg.AutomountRoot = value),
+                    ("automount", "options") => Assign(() => cfg.AutomountOptions = value),
+                    ("interop", "enabled") => Assign(() => cfg.InteropEnabled = Bool(value)),
+                    ("interop", "appendwindowspath") => Assign(() => cfg.AppendWindowsPath = Bool(value)),
+                    ("network", "generatehosts") => Assign(() => cfg.GenerateHosts = Bool(value)),
+                    ("network", "generateresolvconf") => Assign(() => cfg.GenerateResolvConf = Bool(value)),
+                    ("network", "dns") => Assign(() => cfg.Dns = value),
+                    ("boot", "command") => Assign(() => cfg.BootCommand = value),
+                    ("boot", "protectbinfmt") => Assign(() => cfg.ProtectBinfmt = Bool(value)),
+                    ("gpu", "enabled") => Assign(() => cfg.GpuEnabled = Bool(value)),
+                    ("time", "usewindowstimezone") => Assign(() => cfg.UseWindowsTimezone = Bool(value)),
                     _ => false
                 };
                 if (!matched)
@@ -46,6 +70,18 @@ public class WslDistroConfig
         Put(ini, "boot", "systemd", Systemd?.ToString().ToLowerInvariant());
         Put(ini, "automount", "enabled", AutomountEnabled?.ToString().ToLowerInvariant());
         Put(ini, "network", "hostname", Hostname);
+        Put(ini, "automount", "mountFsTab", MountFsTab?.ToString().ToLowerInvariant());
+        Put(ini, "automount", "root", AutomountRoot);
+        Put(ini, "automount", "options", AutomountOptions);
+        Put(ini, "interop", "enabled", InteropEnabled?.ToString().ToLowerInvariant());
+        Put(ini, "interop", "appendWindowsPath", AppendWindowsPath?.ToString().ToLowerInvariant());
+        Put(ini, "network", "generateHosts", GenerateHosts?.ToString().ToLowerInvariant());
+        Put(ini, "network", "generateResolvConf", GenerateResolvConf?.ToString().ToLowerInvariant());
+        Put(ini, "network", "dns", Dns);
+        Put(ini, "boot", "command", BootCommand);
+        Put(ini, "boot", "protectBinfmt", ProtectBinfmt?.ToString().ToLowerInvariant());
+        Put(ini, "gpu", "enabled", GpuEnabled?.ToString().ToLowerInvariant());
+        Put(ini, "time", "useWindowsTimezone", UseWindowsTimezone?.ToString().ToLowerInvariant());
         return ini;
     }
 

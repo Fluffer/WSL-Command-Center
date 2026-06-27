@@ -38,6 +38,16 @@
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE80F;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Monitor" Tag="Monitor">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE9D9;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Network" Tag="Network">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE968;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Deploy" Tag="Deploy">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE896;" />
@@ -46,6 +56,11 @@
                 <muxc:NavigationViewItem Content="Backup" Tag="Backup">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE7B8;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Snapshots" Tag="Snapshots">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE81C;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Disks" Tag="Disks">

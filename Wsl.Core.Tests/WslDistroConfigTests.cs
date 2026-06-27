@@ -51,4 +51,36 @@ public class WslDistroConfigTests
         Assert.Contains("default=peter", runner.LastStdin);
         Assert.Contains("systemd=true", runner.LastStdin);
     }
+
+    [Fact]
+    public void RoundTrips_NewSectionsAndKeys()
+    {
+        var ini = IniParser.Parse(
+            "[automount]\nenabled=true\nmountFsTab=false\nroot=/\noptions=metadata,uid=1000\n" +
+            "[interop]\nenabled=false\nappendWindowsPath=false\n" +
+            "[network]\nhostname=devbox\ngenerateHosts=false\ngenerateResolvConf=false\ndns=1.1.1.1\n" +
+            "[boot]\nsystemd=true\ncommand=service docker start\nprotectBinfmt=false\n" +
+            "[gpu]\nenabled=false\n" +
+            "[time]\nuseWindowsTimezone=false\n");
+
+        var cfg = WslDistroConfig.FromIni(ini);
+        Assert.Equal(false, cfg.MountFsTab);
+        Assert.Equal("/", cfg.AutomountRoot);
+        Assert.Equal("metadata,uid=1000", cfg.AutomountOptions);
+        Assert.Equal(false, cfg.InteropEnabled);
+        Assert.Equal(false, cfg.AppendWindowsPath);
+        Assert.Equal("1.1.1.1", cfg.Dns);
+        Assert.Equal("service docker start", cfg.BootCommand);
+        Assert.Equal(false, cfg.GpuEnabled);
+        Assert.Equal(false, cfg.UseWindowsTimezone);
+
+        var back = cfg.ToIni();
+        Assert.Equal("false", back["automount"]["mountFsTab"]);
+        Assert.Equal("metadata,uid=1000", back["automount"]["options"]);
+        Assert.Equal("service docker start", back["boot"]["command"]);
+        Assert.Equal("1.1.1.1", back["network"]["dns"]);
+        // existing modeled keys still survive
+        Assert.Equal("true", back["automount"]["enabled"]);
+        Assert.Equal("devbox", back["network"]["hostname"]);
+    }
 }

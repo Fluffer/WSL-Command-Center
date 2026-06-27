@@ -55,6 +55,9 @@ public class WslDistroService
     public Task SetDefaultUserAsync(string name, string user, CancellationToken ct = default)
         => Run(new[] { "--manage", name, "--set-default-user", user }, $"Set default user for {name}", ct);
 
+    public Task ShutdownAsync(CancellationToken ct = default)
+        => Run(new[] { "--shutdown" }, "Shutdown WSL", ct);
+
     /// <summary>Lists login-capable users in the distro (root + regular UIDs 1000–59999,
     /// excluding nologin/false shells). Starts the distro implicitly if stopped.</summary>
     public async Task<IReadOnlyList<string>> ListUsersAsync(string name, CancellationToken ct = default)

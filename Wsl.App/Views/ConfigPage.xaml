@@ -37,7 +37,8 @@
                         <FontIcon Glyph="&#xEEA0;" />
                     </controls:SettingsCard.HeaderIcon>
                     <TextBox Text="{x:Bind Vm.Memory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             PlaceholderText="e.g. 8GB" MinWidth="200" />
+                             PlaceholderText="e.g. 8GB" MinWidth="200"
+                             AutomationProperties.AutomationId="MemoryTb" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -47,7 +48,8 @@
                         <FontIcon Glyph="&#xE950;" />
                     </controls:SettingsCard.HeaderIcon>
                     <TextBox Text="{x:Bind Vm.Processors, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             MinWidth="200" />
+                             MinWidth="200"
+                             AutomationProperties.AutomationId="ProcessorsTb" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -58,7 +60,8 @@
                     </controls:SettingsCard.HeaderIcon>
                     <ComboBox IsEditable="True" MinWidth="200"
                               ItemsSource="{x:Bind Vm.NetworkingModes}"
-                              Text="{x:Bind Vm.Networking, Mode=TwoWay}" />
+                              Text="{x:Bind Vm.Networking, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="NetworkingCombo" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -67,16 +70,207 @@
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE774;" />
                     </controls:SettingsCard.HeaderIcon>
-                    <ToggleSwitch IsOn="{x:Bind Vm.LocalhostForwarding, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Vm.LocalhostForwarding, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="LocalhostForwardingTs" />
                 </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="GUI applications"
+                    Description="Enable support for Linux GUI apps (WSLg). Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8A7;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.GuiApplications, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="GuiApplicationsCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="VM idle timeout (seconds)"
+                    Description="Seconds of CPU inactivity before WSL2 VM suspends. Empty = never suspend.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE916;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.VmIdleTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. 60000" MinWidth="200"
+                             AutomationProperties.AutomationId="VmIdleTimeoutTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Default VHD size"
+                    Description="Maximum size of the virtual disk for distros. Empty = WSL default (1TB). e.g. 50GB.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xEDA2;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.DefaultVhdSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. 50GB" MinWidth="200"
+                             AutomationProperties.AutomationId="DefaultVhdSizeTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Firewall"
+                    Description="Apply Windows Hyper-V firewall rules to WSL. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE78D;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.Firewall, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="FirewallCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="DNS tunneling"
+                    Description="Route DNS queries through the Windows DNS stack. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE968;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.DnsTunneling, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="DnsTunnelingCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="DNS proxy"
+                    Description="Proxy DNS traffic to Windows DNS. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE968;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.DnsProxy, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="DnsProxyCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Auto proxy"
+                    Description="Automatically inherit the Windows proxy settings. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE774;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.AutoProxy, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="AutoProxyCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Kernel command line"
+                    Description="Extra parameters appended to the WSL2 Linux kernel command line.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE756;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.KernelCommandLine, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             MinWidth="300"
+                             AutomationProperties.AutomationId="KernelCommandLineTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Safe mode"
+                    Description="Boot WSL without custom kernel / drivers for troubleshooting. Indeterminate = use WSL default (false).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.SafeMode, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="SafeModeCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Debug console"
+                    Description="Show a kernel debug console window on WSL startup. Indeterminate = use WSL default (false).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7C5;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.DebugConsole, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="DebugConsoleCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Max crash dump count"
+                    Description="Number of crash dumps to retain. Empty = use WSL default (1).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7BC;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.MaxCrashDumpCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. 1" MinWidth="200"
+                             AutomationProperties.AutomationId="MaxCrashDumpCountTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Kernel"
+                    Description="Absolute path to a custom Linux kernel image. Empty = use the built-in WSL2 kernel.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8B7;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.Kernel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. C:\Kernels\bzImage" MinWidth="300"
+                             AutomationProperties.AutomationId="KernelTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Kernel modules"
+                    Description="Absolute path to a VHD containing kernel modules matching the custom kernel.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8B7;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.KernelModules, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. C:\Kernels\modules.vhd" MinWidth="300"
+                             AutomationProperties.AutomationId="KernelModulesTb" />
+                </controls:SettingsCard>
+
+                <!-- Experimental keys -->
+                <controls:SettingsExpander
+                    Header="Experimental"
+                    Description="Settings from the [experimental] section of .wslconfig.">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon Glyph="&#xE756;" />
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+
+                        <controls:SettingsCard
+                            Header="Auto memory reclaim"
+                            Description="Strategy for reclaiming cached memory from the WSL2 VM. Empty = use WSL default (disabled).">
+                            <ComboBox IsEditable="True" MinWidth="200"
+                                      ItemsSource="{x:Bind Vm.AutoMemoryReclaimModes}"
+                                      Text="{x:Bind Vm.AutoMemoryReclaim, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="AutoMemoryReclaimCombo" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard
+                            Header="Sparse VHD"
+                            Description="Automatically shrink VHD files when disk space is freed. Indeterminate = use WSL default (false).">
+                            <CheckBox IsThreeState="True"
+                                      IsChecked="{x:Bind Vm.SparseVhd, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="SparseVhdCb" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard
+                            Header="Ignored ports"
+                            Description="Comma-separated list of Windows ports excluded from mirrored-mode binding. Only applies when networkingMode=mirrored.">
+                            <TextBox Text="{x:Bind Vm.IgnoredPorts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="e.g. 8080,3000" MinWidth="200"
+                                     AutomationProperties.AutomationId="IgnoredPortsTb" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard
+                            Header="Host address loopback"
+                            Description="Allow WSL to connect to the host via its mirrored IP. Only applies when networkingMode=mirrored. Indeterminate = use WSL default (false).">
+                            <CheckBox IsThreeState="True"
+                                      IsChecked="{x:Bind Vm.HostAddressLoopback, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="HostAddressLoopbackCb" />
+                        </controls:SettingsCard>
+
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
                 <controls:SettingsCard
                     Header="Apply"
                     Description="Reload the file from disk, or write your changes to ~/.wslconfig.">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Load" Command="{x:Bind Vm.LoadGlobalCommand}" />
+                        <Button Content="Load" Command="{x:Bind Vm.LoadGlobalCommand}"
+                                AutomationProperties.AutomationId="LoadGlobalBtn" />
                         <Button Content="Save" Command="{x:Bind Vm.SaveGlobalCommand}"
-                                Style="{StaticResource AccentButtonStyle}" />
+                                Style="{StaticResource AccentButtonStyle}"
+                                AutomationProperties.AutomationId="SaveGlobalBtn" />
                     </StackPanel>
                 </controls:SettingsCard>
             </StackPanel>
@@ -98,8 +292,10 @@
                         <ComboBox MinWidth="200"
                                   ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
                                   SelectedItem="{x:Bind Vm.SelectedDistro, Mode=TwoWay}"
-                                  SelectionChanged="Distro_SelectionChanged" />
-                        <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}" />
+                                  SelectionChanged="Distro_SelectionChanged"
+                                  AutomationProperties.AutomationId="DistroCombo" />
+                        <Button Content="Refresh" Command="{x:Bind Vm.LoadDistrosCommand}"
+                                AutomationProperties.AutomationId="RefreshDistrosBtn" />
                     </StackPanel>
                 </controls:SettingsCard>
 
@@ -110,7 +306,8 @@
                         <FontIcon Glyph="&#xE77B;" />
                     </controls:SettingsCard.HeaderIcon>
                     <TextBox Text="{x:Bind Vm.DefaultUser, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             MinWidth="200" />
+                             MinWidth="200"
+                             AutomationProperties.AutomationId="DefaultUserTb" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -119,7 +316,8 @@
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE912;" />
                     </controls:SettingsCard.HeaderIcon>
-                    <ToggleSwitch IsOn="{x:Bind Vm.Systemd, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Vm.Systemd, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="SystemdTs" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -129,16 +327,152 @@
                         <FontIcon Glyph="&#xE7F4;" />
                     </controls:SettingsCard.HeaderIcon>
                     <TextBox Text="{x:Bind Vm.Hostname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             MinWidth="200" />
+                             MinWidth="200"
+                             AutomationProperties.AutomationId="HostnameTb" />
+                </controls:SettingsCard>
+
+                <!-- Tier 2 distro keys -->
+                <controls:SettingsCard
+                    Header="Mount /etc/fstab"
+                    Description="Process /etc/fstab entries on distro start. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xEDA2;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.MountFsTab, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="MountFsTabCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Automount root"
+                    Description="Path where Windows drives are mounted inside the distro. Empty = use WSL default (/mnt/).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xEDA2;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.AutomountRoot, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="/mnt/" MinWidth="200"
+                             AutomationProperties.AutomationId="AutomountRootTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Automount options"
+                    Description="Additional mount options passed when mounting Windows drives, e.g. metadata,umask=22.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE90F;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.AutomountOptions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. metadata,umask=22" MinWidth="200"
+                             AutomationProperties.AutomationId="AutomountOptionsTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Interop enabled"
+                    Description="Allow launching Windows executables from inside the distro. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8AB;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.InteropEnabled, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="InteropEnabledCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Append Windows PATH"
+                    Description="Append Windows %PATH% entries to the distro's $PATH. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8AB;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.AppendWindowsPath, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="AppendWindowsPathCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Generate /etc/hosts"
+                    Description="Auto-generate /etc/hosts from Windows hosts on startup. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE774;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.GenerateHosts, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="GenerateHostsCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Generate /etc/resolv.conf"
+                    Description="Auto-generate /etc/resolv.conf from Windows DNS on startup. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE968;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.GenerateResolvConf, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="GenerateResolvConfCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="DNS server"
+                    Description="Override DNS server IP written into /etc/resolv.conf. Empty = derived from Windows.">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE968;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.Dns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. 1.1.1.1" MinWidth="200"
+                             AutomationProperties.AutomationId="DnsTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Boot command"
+                    Description="Shell command executed as root on distro startup (after init, before login).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7C5;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TextBox Text="{x:Bind Vm.BootCommand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="e.g. /usr/local/bin/boot.sh" MinWidth="300"
+                             AutomationProperties.AutomationId="BootCommandTb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Protect binfmt"
+                    Description="Keep custom binfmt_misc entries across distro restarts. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE78D;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.ProtectBinfmt, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="ProtectBinfmtCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="GPU enabled"
+                    Description="Enable GPU acceleration (DirectX / CUDA via GPU-PV). Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE7F4;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.GpuEnabled, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="GpuEnabledCb" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Header="Use Windows timezone"
+                    Description="Sync the distro's timezone with the Windows system timezone. Indeterminate = use WSL default (true).">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE916;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <CheckBox IsThreeState="True"
+                              IsChecked="{x:Bind Vm.UseWindowsTimezone, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="UseWindowsTimezoneCb" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
                     Header="Apply"
                     Description="Reload the distro's wsl.conf, or write your changes into it as root.">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Load" Command="{x:Bind Vm.LoadDistroCommand}" />
+                        <Button Content="Load" Command="{x:Bind Vm.LoadDistroCommand}"
+                                AutomationProperties.AutomationId="LoadDistroBtn" />
                         <Button Content="Save" Command="{x:Bind Vm.SaveDistroCommand}"
-                                Style="{StaticResource AccentButtonStyle}" />
+                                Style="{StaticResource AccentButtonStyle}"
+                                AutomationProperties.AutomationId="SaveDistroBtn" />
                     </StackPanel>
                 </controls:SettingsCard>
             </StackPanel>
@@ -151,9 +485,11 @@
                     <FontIcon Glyph="&#xE7E8;" />
                 </controls:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Shutdown WSL now" Click="Shutdown_Click" />
+                    <Button Content="Shutdown WSL now" Click="Shutdown_Click"
+                            AutomationProperties.AutomationId="ShutdownBtn" />
                     <Button Click="CopyShutdownPs_Click"
-                            ToolTipService.ToolTip="Copy the equivalent wsl.exe command to the clipboard">
+                            ToolTipService.ToolTip="Copy the equivalent wsl.exe command to the clipboard"
+                            AutomationProperties.AutomationId="CopyShutdownPsBtn">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE756;" FontSize="14" />
                             <TextBlock Text="Copy PowerShell" />

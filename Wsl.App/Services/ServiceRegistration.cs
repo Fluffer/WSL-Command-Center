@@ -1,9 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.Core;
+using Wsl.Core.Snapshots;
 using Wsl.Core.Ipc;
 using Wsl.Core.Settings;
 using Wsl.Core.Scripting;
 using Wsl.Core.Scheduling;
+using Wsl.Core.Monitoring;
+using Wsl.Core.Diagnostics;
 using Wsl.App.Logic.ViewModels;
 
 namespace Wsl.App.Services;
@@ -43,6 +46,23 @@ public static class ServiceRegistration
         services.AddTransient<SetupViewModel>();           // Task 21
         services.AddTransient<ScheduleViewModel>();
         services.AddTransient<DisksViewModel>();
+        services.AddTransient<MonitorViewModel>();
+        services.AddTransient<NetworkViewModel>();
+        services.AddSingleton<WslSnapshotService>(sp => new WslSnapshotService(
+            sp.GetRequiredService<WslDistroService>(),
+            () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                               "WslCommandCenter", "Snapshots"),
+            sp.GetRequiredService<IProcessRunner>()));
+        services.AddTransient<SnapshotViewModel>();
+
+        // Diagnostics services (singletons — lightweight, share process runner)
+        services.AddSingleton<WslNetworkService>();
+        services.AddSingleton<WslGpuService>();
+
+        // Monitoring probes + service (singletons — share CPU baseline across refreshes)
+        services.AddSingleton<IVmProcessProbe, VmProcessProbe>();
+        services.AddSingleton<IVhdxSizeProbe, RegistryVhdxSizeProbe>();
+        services.AddSingleton<WslMonitorService>();
 
         return services.BuildServiceProvider();
     }

@@ -79,4 +79,26 @@ public class ConfigViewModelTests
 
         Assert.Equal(new[] { "Ubuntu", "Debian" }, vm.Distros);
     }
+
+    [Fact]
+    public async Task SaveGlobal_PersistsGuiApplicationsAndAutoMemoryReclaim()
+    {
+        var tmp = Path.Combine(Path.GetTempPath(), $"wslcfg-{Guid.NewGuid():N}.ini");
+        await File.WriteAllTextAsync(tmp, "[wsl2]\nmemory=4GB\n");
+        try
+        {
+            var runner = new FakeProcessRunner();
+            var cfgService = MakeConfigService(runner, tmp);
+            var vm = new ConfigViewModel(cfgService, new WslDistroService(runner));
+            await vm.LoadGlobalAsync();
+            vm.GuiApplications = false;
+            vm.AutoMemoryReclaim = "gradual";
+            await vm.SaveGlobalAsync();
+
+            var saved = await cfgService.ReadGlobalAsync();
+            Assert.Equal(false, saved.GuiApplications);
+            Assert.Equal("gradual", saved.AutoMemoryReclaim);
+        }
+        finally { File.Delete(tmp); }
+    }
 }

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.SnapshotPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:snap="using:Wsl.Core.Snapshots">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="1200" HorizontalAlignment="Stretch">
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Snapshots" Style="{StaticResource TitleTextBlockStyle}" />
+                <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}"
+                                   Width="20" Height="20" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Error InfoBar -->
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Error"
+                          Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+
+            <!-- Distro selector + label + create -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox ItemsSource="{x:Bind Vm.Distros, Mode=OneWay}"
+                          SelectedItem="{x:Bind Vm.SelectedDistro, Mode=TwoWay}"
+                          SelectionChanged="DistroComboBox_SelectionChanged"
+                          PlaceholderText="Select distro"
+                          MinWidth="220"
+                          VerticalAlignment="Center"
+                          AutomationProperties.AutomationId="SnapshotDistroComboBox" />
+                <TextBox Text="{x:Bind Vm.NewLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Snapshot label (optional)"
+                         MinWidth="200"
+                         VerticalAlignment="Center"
+                         AutomationProperties.AutomationId="SnapshotLabelTextBox" />
+                <Button Content="Create snapshot"
+                        Command="{x:Bind Vm.CreateCommand}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="CreateSnapshotButton" />
+            </StackPanel>
+
+            <!-- Snapshots list -->
+            <ListView ItemsSource="{x:Bind Vm.Snapshots, Mode=OneWay}"
+                      SelectionMode="None">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,0,8" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="snap:Snapshot">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Snapshot info columns -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                            Spacing="16" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Label}"
+                                               Style="{StaticResource BodyStrongTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind CreatedUtc}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind Bytes, Converter={StaticResource BytesToGb}}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind Format}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Action buttons -->
+                                <Button Grid.Column="1"
+                                        Content="Restore (clone)"
+                                        Click="RestoreClone_Click"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.AutomationId="SnapshotRestoreCloneButton" />
+                                <Button Grid.Column="2"
+                                        Content="Restore (overwrite)"
+                                        Click="RestoreOverwrite_Click"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.AutomationId="SnapshotRestoreOverwriteButton" />
+                                <Button Grid.Column="3"
+                                        Content="Delete"
+                                        Click="Delete_Click"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.AutomationId="SnapshotDeleteButton" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

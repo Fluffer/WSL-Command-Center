@@ -14,6 +14,7 @@
             <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
             <conv:StateToBrushConverter x:Key="StateToBrush" />
             <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+            <conv:BytesToGbConverter x:Key="BytesToGb" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

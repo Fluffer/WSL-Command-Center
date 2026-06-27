@@ -13,6 +13,7 @@ public sealed class PowerShellExporter : IPowerShellExporter
         "wsl.exe --shutdown",
         "try {",
         $"    wsl.exe --export {Q(name)} {Q(outPath)} --format {FormatFlag(fmt)}",
+        "    if ($LASTEXITCODE -ne 0) { throw \"wsl --export failed ($LASTEXITCODE)\" }",
         "}",
         "finally {",
         "    foreach ($d in $running) { wsl.exe -d $d -- true }",

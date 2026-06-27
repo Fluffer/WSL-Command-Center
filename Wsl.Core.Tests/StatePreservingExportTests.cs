@@ -52,4 +52,26 @@ public class StatePreservingExportTests
         var sp = new StatePreservingExport(new WslDistroService(runner));
         Assert.Equal(new[] { "Ubuntu" }, await sp.RunningAsync());
     }
+
+    [Fact]
+    public async Task RunAsync_BestEffortRestart_ContinuesDespiteFirstStartThrows()
+    {
+        const string bothRunning =
+            "  NAME      STATE     VERSION\n* Ubuntu    Running   2\n  Debian    Running   2\n";
+
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, bothRunning);  // ListAsync (--list --verbose)
+        runner.Enqueue(0, "");           // ShutdownAsync (--shutdown)
+        // export delegate is a no-op lambda; no runner call
+        runner.Enqueue(1, "");           // StartAsync Ubuntu → non-zero → WslException (swallowed)
+        runner.Enqueue(0, "");           // StartAsync Debian → success
+
+        var sp = new StatePreservingExport(new WslDistroService(runner));
+        // Export succeeds, first restart throws, second must still run → no exception propagates.
+        await sp.RunAsync(_ => Task.CompletedTask);
+
+        var flat = runner.AllArgs;
+        Assert.Contains(flat, a => a.Length >= 2 && a[0] == "-d" && a[1] == "Ubuntu");
+        Assert.Contains(flat, a => a.Length >= 2 && a[0] == "-d" && a[1] == "Debian");
+    }
 }

@@ -38,6 +38,20 @@ public class WslScheduleServiceTests
     }
 
     [Fact]
+    public void BuildScript_GuardsExitCodeBeforePrune()
+    {
+        var (svc, _, _) = Make();
+        var s = new BackupSchedule("Ubuntu", @"C:\backups", ExportFormat.Tar,
+                                   ScheduleFrequency.Daily, "02:30", 7);
+        var script = svc.BuildScript(s);
+
+        Assert.Contains("$LASTEXITCODE -ne 0", script);
+        // Guard must appear before the prune so a failed export cannot delete old backups.
+        Assert.True(script.IndexOf("$LASTEXITCODE -ne 0", StringComparison.Ordinal)
+                    < script.IndexOf("Remove-Item", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void BuildScript_Vhd_UsesVhdxExtensionButVhdFormatFlag()
     {
         var (svc, _, _) = Make();

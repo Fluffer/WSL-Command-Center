@@ -12,6 +12,7 @@ public sealed partial class SnapshotPage : Page
 {
     public SnapshotViewModel Vm { get; }
     private bool _loaded;
+    private bool _createDialogOpen;
 
     public SnapshotPage()
     {
@@ -26,23 +27,29 @@ public sealed partial class SnapshotPage : Page
 
     private async void Create_Click(object sender, RoutedEventArgs e)
     {
-        if (Vm.CreateCommand.IsRunning) return;
-        var running = await Vm.RunningDistrosAsync();
-        if (running.Count > 0)
+        if (_createDialogOpen) return;
+        _createDialogOpen = true;
+        try
         {
-            var dialog = new ContentDialog
+            if (Vm.CreateCommand.IsRunning) return;
+            var running = await Vm.RunningDistrosAsync();
+            if (running.Count > 0)
             {
-                XamlRoot = XamlRoot,
-                Title = "Stop running distros for snapshot?",
-                Content = $"This briefly stops ALL running distros ({string.Join(", ", running)}) " +
-                          "and restarts them after the snapshot completes. Continue?",
-                PrimaryButtonText = "Stop & snapshot",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-            };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+                var dialog = new ContentDialog
+                {
+                    XamlRoot = XamlRoot,
+                    Title = "Stop running distros for snapshot?",
+                    Content = $"This briefly stops ALL running distros ({string.Join(", ", running)}) " +
+                              "and restarts them after the snapshot completes. Continue?",
+                    PrimaryButtonText = "Stop & snapshot",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                };
+                if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            }
+            await Vm.CreateCommand.ExecuteAsync(null);
         }
-        await Vm.CreateCommand.ExecuteAsync(null);
+        finally { _createDialogOpen = false; }
     }
 
     private async void DistroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

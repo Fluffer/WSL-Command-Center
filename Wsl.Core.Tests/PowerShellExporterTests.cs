@@ -16,6 +16,7 @@ public class PowerShellExporterTests
         Assert.Contains("wsl.exe --shutdown", s);
         Assert.Contains("--export Ubuntu", s);
         Assert.Contains("-- true", s);
+        Assert.Contains("$LASTEXITCODE -ne 0", s);
     }
 
     [Fact]

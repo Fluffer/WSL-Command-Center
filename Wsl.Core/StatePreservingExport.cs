@@ -24,7 +24,14 @@ public sealed class StatePreservingExport
         var running = await RunningAsync(ct);
         await _distros.ShutdownAsync(ct);
         try { await export(ct); }
-        finally { foreach (var d in running) await _distros.StartAsync(d, ct); }
+        finally
+        {
+            foreach (var d in running)
+            {
+                try { await _distros.StartAsync(d, ct); }
+                catch { /* best-effort restart; don't let one failure strand the others or mask the export error */ }
+            }
+        }
         return running;
     }
 }

@@ -58,6 +58,7 @@ public sealed class WslScheduleService : IWslScheduleService
             "wsl.exe --shutdown",
             "try {",
             $"    wsl.exe --export {name} $out --format {fmt}",
+            "    if ($LASTEXITCODE -ne 0) { throw \"wsl --export failed ($LASTEXITCODE)\" }",
             $"    Get-ChildItem -LiteralPath {folder} -Filter {glob} | " +
                 $"Sort-Object LastWriteTime -Descending | Select-Object -Skip {s.KeepCount} | " +
                 "Remove-Item -Force",

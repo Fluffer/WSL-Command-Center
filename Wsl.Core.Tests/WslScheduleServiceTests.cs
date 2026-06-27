@@ -122,4 +122,24 @@ public class WslScheduleServiceTests
         Assert.Equal("schtasks.exe", runner.LastExe);
         Assert.Equal(new[] { "/Delete", "/TN", "WslCmdCenter_Backup_Ubuntu", "/F" }, a);
     }
+
+    [Fact]
+    public void BuildScript_IsStatePreserving()
+    {
+        var svc = new WslScheduleService(new FakeProcessRunner(), Path.GetTempPath());
+        var s = new Wsl.Core.Scheduling.BackupSchedule(
+            "Ubuntu", @"C:\backups", ExportFormat.Tar,
+            Wsl.Core.Scheduling.ScheduleFrequency.Daily, "02:00", 3);
+        var script = svc.BuildScript(s);
+
+        Assert.Contains("[Console]::OutputEncoding", script);          // UTF-16 fix
+        Assert.Contains("--list --running --quiet", script);           // capture running
+        Assert.Contains("wsl.exe --shutdown", script);                 // release VHDs
+        Assert.Contains("--export 'Ubuntu' $out --format tar", script);// export
+        Assert.Contains("finally", script);                            // restart wrapper
+        Assert.Contains("-- true", script);                            // restart command
+        // prune sits inside try (before finally) so a failed export keeps old backups
+        Assert.True(script.IndexOf("Remove-Item", StringComparison.Ordinal)
+                    < script.IndexOf("finally", StringComparison.Ordinal));
+    }
 }

@@ -49,12 +49,22 @@ public sealed class WslScheduleService : IWslScheduleService
         return string.Join("\r\n", new[]
         {
             "$ErrorActionPreference = 'Stop'",
+            "[Console]::OutputEncoding = [System.Text.Encoding]::Unicode",
             "$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'",
             $"$out = Join-Path {folder} ({prefix} + $stamp + '.{ext}')",
-            $"wsl.exe --export {name} $out --format {fmt}",
-            $"Get-ChildItem -LiteralPath {folder} -Filter {glob} | " +
+            // Capture running distros (names only; trim + drop blanks for the UTF-16 output).
+            "$running = @(wsl.exe --list --running --quiet | " +
+                "ForEach-Object { $_.Trim() } | Where-Object { $_ })",
+            "wsl.exe --shutdown",
+            "try {",
+            $"    wsl.exe --export {name} $out --format {fmt}",
+            $"    Get-ChildItem -LiteralPath {folder} -Filter {glob} | " +
                 $"Sort-Object LastWriteTime -Descending | Select-Object -Skip {s.KeepCount} | " +
                 "Remove-Item -Force",
+            "}",
+            "finally {",
+            "    foreach ($d in $running) { wsl.exe -d $d -- true }",
+            "}",
             "",
         });
     }

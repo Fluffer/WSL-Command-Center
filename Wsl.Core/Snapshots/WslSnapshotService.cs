@@ -94,7 +94,8 @@ public class WslSnapshotService
 
     public void Delete(Snapshot snap)
     {
-        var root = Path.GetFullPath(_root());
+        var root = Path.GetFullPath(_root()).TrimEnd(Path.DirectorySeparatorChar)
+                     + Path.DirectorySeparatorChar;
         foreach (var p in new[] { snap.VhdxPath, snap.SidecarPath })
         {
             if (string.IsNullOrEmpty(p)) continue;

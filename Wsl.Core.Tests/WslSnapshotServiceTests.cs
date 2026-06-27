@@ -90,5 +90,27 @@ public class WslSnapshotServiceTests : IDisposable
         }
     }
 
+    [Fact]
+    public void Delete_IgnoresSiblingDirectorySharingRootPrefix()
+    {
+        var runner = new FakeProcessRunner();
+        var svc = Build(runner);
+        var siblingDir = _root + "-sibling";
+        Directory.CreateDirectory(siblingDir);
+        var siblingFile = Path.Combine(siblingDir, "file.vhdx");
+        File.WriteAllBytes(siblingFile, new byte[1024]);
+        try
+        {
+            var snap = new Snapshot("Ubuntu", "test", DateTime.UtcNow, 1024, "vhd", 2,
+                siblingFile, siblingFile + ".json");
+            svc.Delete(snap);
+            Assert.True(File.Exists(siblingFile), "File in sibling directory must not be deleted");
+        }
+        finally
+        {
+            if (Directory.Exists(siblingDir)) Directory.Delete(siblingDir, true);
+        }
+    }
+
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
 }

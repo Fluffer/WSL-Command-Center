@@ -27,6 +27,7 @@ public class PrivilegedOperations
             UnmountDiskRequest r => UnmountDisk(r.Disk, ct),
             LaunchDebugShellRequest => Task.FromResult(LaunchDebugShell()),
             UninstallWslRequest => UninstallWsl(ct),
+            DeletePortProxyRequest r => DeletePortProxy(r, ct),
             _ => Task.FromResult(new BrokerResponse(false, $"Unknown request: {request.GetType().Name}"))
         };
 
@@ -169,6 +170,19 @@ public class PrivilegedOperations
         return r.ExitCode == 0
             ? new BrokerResponse(true, Detail: "wsl uninstalled")
             : Fail(r, "Uninstall WSL");
+    }
+
+    private async Task<BrokerResponse> DeletePortProxy(DeletePortProxyRequest r, CancellationToken ct)
+    {
+        var args = new[]
+        {
+            "interface", "portproxy", "delete", "v4tov4",
+            $"listenport={r.ListenPort}", $"listenaddress={r.ListenAddress}"
+        };
+        var res = await _runner.RunAsync("netsh.exe", args, null, ct);
+        return res.ExitCode == 0
+            ? new BrokerResponse(true, Detail: $"deleted {r.ListenAddress}:{r.ListenPort}")
+            : Fail(res, "Delete port proxy");
     }
 
     /// <summary>True/false when the disk could be checked; null when enumeration failed

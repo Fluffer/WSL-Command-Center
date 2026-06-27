@@ -33,6 +33,7 @@ public class ContractsSerializationTests
             new UnmountDiskRequest(null),
             new LaunchDebugShellRequest(),
             new UninstallWslRequest(),
+            new DeletePortProxyRequest("0.0.0.0", 8080),
         };
         foreach (var req in all)
         {
@@ -96,6 +97,18 @@ public class ContractsSerializationTests
         Assert.Contains("\"$type\":\"uninstallWsl\"", json);
         var back = JsonSerializer.Deserialize<BrokerRequest>(json, Opts);
         Assert.IsType<UninstallWslRequest>(back);
+    }
+
+    [Fact]
+    public void Roundtrips_delete_port_proxy_request()
+    {
+        BrokerRequest req = new DeletePortProxyRequest("0.0.0.0", 8080);
+        var json = JsonSerializer.Serialize(req, Opts);
+        Assert.Contains("\"$type\":\"deletePortProxy\"", json);
+        var back = JsonSerializer.Deserialize<BrokerRequest>(json, Opts);
+        var typed = Assert.IsType<DeletePortProxyRequest>(back);
+        Assert.Equal("0.0.0.0", typed.ListenAddress);
+        Assert.Equal(8080, typed.ListenPort);
     }
 
     [Fact]

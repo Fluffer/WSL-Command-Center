@@ -12,6 +12,7 @@ namespace Wsl.Contracts;
 [JsonDerivedType(typeof(UnmountDiskRequest), "unmountDisk")]
 [JsonDerivedType(typeof(LaunchDebugShellRequest), "launchDebugShell")]
 [JsonDerivedType(typeof(UninstallWslRequest), "uninstallWsl")]
+[JsonDerivedType(typeof(DeletePortProxyRequest), "deletePortProxy")]
 public abstract record BrokerRequest;
 
 public record CheckWslInstalledRequest() : BrokerRequest;
@@ -43,6 +44,9 @@ public record LaunchDebugShellRequest() : BrokerRequest;
 /// platform from the machine; every installed distribution stops working. NOT the same as
 /// unregistering a single distribution.</summary>
 public record UninstallWslRequest() : BrokerRequest;
+
+/// <summary>Remove a netsh portproxy v4tov4 rule. Requires admin, hence the broker.</summary>
+public record DeletePortProxyRequest(string ListenAddress, int ListenPort) : BrokerRequest;
 
 public record DiskInfo(
     string DeviceId,

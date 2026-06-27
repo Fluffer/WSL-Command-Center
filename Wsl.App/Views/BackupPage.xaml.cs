@@ -24,6 +24,7 @@ public sealed partial class BackupPage : Page
 
     private async void Export_Click(object sender, RoutedEventArgs e)
     {
+        if (Vm.ExportCommand.IsRunning) return;
         var running = await Vm.RunningDistrosAsync();
         if (running.Count > 0)
         {

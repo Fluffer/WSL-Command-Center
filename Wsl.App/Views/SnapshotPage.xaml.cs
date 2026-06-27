@@ -26,6 +26,7 @@ public sealed partial class SnapshotPage : Page
 
     private async void Create_Click(object sender, RoutedEventArgs e)
     {
+        if (Vm.CreateCommand.IsRunning) return;
         var running = await Vm.RunningDistrosAsync();
         if (running.Count > 0)
         {

@@ -26,6 +26,7 @@ public static class ServiceRegistration
         services.AddSingleton<WslBackupService>();
         services.AddSingleton<WslConfigService>();
         services.AddSingleton<BootstrapStateStore>();
+        services.AddSingleton<StatePreservingExport>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IPowerShellExporter, PowerShellExporter>();
         services.AddSingleton<IWslScheduleService, WslScheduleService>();

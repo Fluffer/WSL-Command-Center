@@ -79,6 +79,8 @@ public partial class ConfigViewModel : ObservableObject
     [ObservableProperty] private string? _maxCrashDumpCount;
     [ObservableProperty] private string? _kernel;
     [ObservableProperty] private string? _kernelModules;
+    /// <summary>F3: [wsl2] virtiofs experimental file transport. Applied via its own card (write + shutdown).</summary>
+    [ObservableProperty] private bool _virtiofsEnabled;
 
     // Tier 1 experimental ([experimental])
     [ObservableProperty] private string? _autoMemoryReclaim;
@@ -130,6 +132,7 @@ public partial class ConfigViewModel : ObservableObject
             MaxCrashDumpCount = _global.MaxCrashDumpCount?.ToString();
             Kernel = _global.Kernel;
             KernelModules = _global.KernelModules;
+            VirtiofsEnabled = _global.Virtiofs ?? false;
             AutoMemoryReclaim = _global.AutoMemoryReclaim;
             SparseVhd = _global.SparseVhd;
             IgnoredPorts = _global.IgnoredPorts;
@@ -160,6 +163,7 @@ public partial class ConfigViewModel : ObservableObject
             _global.MaxCrashDumpCount = int.TryParse(MaxCrashDumpCount, out var mcd) ? mcd : null;
             _global.Kernel = NullIfBlank(Kernel);
             _global.KernelModules = NullIfBlank(KernelModules);
+            _global.Virtiofs = VirtiofsEnabled ? true : (bool?)null;
             _global.AutoMemoryReclaim = NullIfBlank(AutoMemoryReclaim);
             _global.SparseVhd = SparseVhd;
             _global.IgnoredPorts = NullIfBlank(IgnoredPorts);
@@ -167,6 +171,33 @@ public partial class ConfigViewModel : ObservableObject
 
             await _config.WriteGlobalAsync(_global);
             StatusMessage = "Saved .wslconfig. Run `wsl --shutdown` to apply.";
+        });
+    }
+
+    /// <summary>F3: writes the [wsl2] virtiofs flag and shuts WSL down so it applies on next launch.
+    /// Re-reads first to preserve other keys. Reverting needs no WSL access (recovery path for the
+    /// known automount-failure bug), since it only edits .wslconfig.</summary>
+    [RelayCommand]
+    public async Task ApplyVirtiofsAsync(bool enable)
+    {
+        await Guarded(async () =>
+        {
+            _global = await _config.ReadGlobalAsync();
+            _global.Virtiofs = enable ? true : (bool?)null;
+            await _config.WriteGlobalAsync(_global);   // durable: flag persisted
+            VirtiofsEnabled = enable;                  // sync toggle to the persisted value before the risky shutdown
+            try
+            {
+                await _distros.ShutdownAsync();
+            }
+            catch (WslException ex)
+            {
+                StatusMessage = $"virtiofs flag saved ({(enable ? "on" : "off")}), but `wsl --shutdown` failed ({ex.Message}). Run it manually to apply.";
+                return;
+            }
+            StatusMessage = enable
+                ? "virtiofs enabled — WSL was shut down; it applies on next launch. If /mnt/c misbehaves, turn this off here to revert (no WSL access needed)."
+                : "virtiofs disabled — WSL was shut down; the 9p transport applies on next launch.";
         });
     }
 
@@ -228,6 +259,8 @@ public partial class ConfigViewModel : ObservableObject
 
     private async Task Guarded(Func<Task> work)
     {
+        // NB: no IsBusy early-return here — the page fires LoadGlobalAsync + LoadDistrosAsync
+        // concurrently on startup, and a re-entry guard would drop the second.
         IsBusy = true; ErrorMessage = null; StatusMessage = null;
         try { await work(); }
         catch (WslException ex) { ErrorMessage = ex.Message; }

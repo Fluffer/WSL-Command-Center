@@ -50,4 +50,34 @@ public sealed partial class ConfigPage : Page
         ClipboardHelper.CopyText(_ps.Shutdown());
         Vm.StatusMessage = "Copied shutdown command to clipboard.";
     }
+
+    private async void ApplyVirtiofs_Click(object s, RoutedEventArgs e)
+    {
+        if (Vm.IsBusy) return;
+        var enable = Vm.VirtiofsEnabled;
+        var content = enable
+            ? "Enable the experimental virtiofs file transport for ALL WSL 2 distros?\n\n" +
+              "• Update WSL first (Diagnostics ▸ Update WSL) for a recent kernel.\n" +
+              "• Known issues: bind-mounted files may appear root-owned and unwritable; automount of every drive can fail if a single share fails (you could lose /mnt/c access).\n" +
+              "• Recovery: if that happens, just turn this toggle back off and Apply — it edits .wslconfig directly and needs no WSL access.\n\n" +
+              "WSL will be shut down so the change applies on next launch."
+            : "Disable virtiofs and return to the default 9p transport for all distros?\n\nWSL will be shut down so the change applies on next launch.";
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = enable ? "Enable virtiofs (experimental)?" : "Disable virtiofs?",
+            Content = content,
+            PrimaryButtonText = enable ? "Enable & shut down" : "Disable & shut down",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            // User cancelled — resync the toggle to the persisted flag so the UI doesn't lie.
+            await Vm.LoadGlobalCommand.ExecuteAsync(null);
+            return;
+        }
+        await Vm.ApplyVirtiofsCommand.ExecuteAsync(enable);
+    }
 }

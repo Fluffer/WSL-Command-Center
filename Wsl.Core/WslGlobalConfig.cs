@@ -27,6 +27,8 @@ public class WslGlobalConfig
     public int? MaxCrashDumpCount { get; set; }
     public string? Kernel { get; set; }
     public string? KernelModules { get; set; }
+    /// <summary>[wsl2] virtiofs — opt-in faster Win↔Linux file transport (default is 9p/Plan9). Experimental.</summary>
+    public bool? Virtiofs { get; set; }
 
     // [experimental]
     public string? AutoMemoryReclaim { get; set; }
@@ -44,7 +46,7 @@ public class WslGlobalConfig
         "networkingMode", "localhostForwarding", "nestedVirtualization",
         "guiApplications", "vmIdleTimeout", "defaultVhdSize", "firewall",
         "dnsTunneling", "dnsProxy", "autoProxy", "kernelCommandLine",
-        "safeMode", "debugConsole", "maxCrashDumpCount", "kernel", "kernelModules"
+        "safeMode", "debugConsole", "maxCrashDumpCount", "kernel", "kernelModules", "virtiofs"
     };
 
     private static readonly HashSet<string> ExperimentalModeled = new(StringComparer.OrdinalIgnoreCase)
@@ -81,6 +83,7 @@ public class WslGlobalConfig
                         case "maxcrashdumpcount": cfg.MaxCrashDumpCount = int.TryParse(value, out var mc) ? mc : null; break;
                         case "kernel": cfg.Kernel = value; break;
                         case "kernelmodules": cfg.KernelModules = value; break;
+                        case "virtiofs": cfg.Virtiofs = ParseBool(value); break;
                     }
                 }
                 else if (section.Equals(ExperimentalSection, StringComparison.OrdinalIgnoreCase) &&
@@ -135,6 +138,7 @@ public class WslGlobalConfig
         Set(wsl2, "maxCrashDumpCount", MaxCrashDumpCount?.ToString());
         Set(wsl2, "kernel", Kernel);
         Set(wsl2, "kernelModules", KernelModules);
+        Set(wsl2, "virtiofs", Virtiofs?.ToString().ToLowerInvariant());
 
         if (!ini.TryGetValue(ExperimentalSection, out var exp))
             ini[ExperimentalSection] = exp = new(StringComparer.OrdinalIgnoreCase);

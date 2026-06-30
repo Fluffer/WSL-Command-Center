@@ -259,6 +259,20 @@
                                       AutomationProperties.AutomationId="HostAddressLoopbackCb" />
                         </controls:SettingsCard>
 
+                        <controls:SettingsCard
+                            Header="virtiofs file transport (experimental)"
+                            Description="Faster Windows&#x2194;Linux file access than the default 9p. Experimental: bind-mounted files may appear root-owned and unwritable, and automount of ALL drives can fail if one share fails. Update WSL first. Applies to all distros on next launch; reverting here needs no WSL access.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xE8B7;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ToggleSwitch IsOn="{x:Bind Vm.VirtiofsEnabled, Mode=TwoWay}"
+                                              AutomationProperties.AutomationId="VirtiofsTs" />
+                                <Button Content="Apply &amp; shut down" Click="ApplyVirtiofs_Click"
+                                        AutomationProperties.AutomationId="ApplyVirtiofsBtn" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 

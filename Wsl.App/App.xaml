@@ -15,6 +15,7 @@
             <conv:StateToBrushConverter x:Key="StateToBrush" />
             <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
             <conv:BytesToGbConverter x:Key="BytesToGb" />
+            <conv:BoolToStatusGlyphConverter x:Key="BoolToStatusGlyph" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

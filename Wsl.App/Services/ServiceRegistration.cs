@@ -24,6 +24,7 @@ public static class ServiceRegistration
         services.AddSingleton<WslDiskService>();
         services.AddSingleton<WslDeployService>();
         services.AddSingleton<WslBackupService>();
+        services.AddSingleton<WslProvisioningService>();
         services.AddSingleton<WslConfigService>();
         services.AddSingleton<BootstrapStateStore>();
         services.AddSingleton<StatePreservingExport>();
@@ -49,6 +50,7 @@ public static class ServiceRegistration
         services.AddTransient<DisksViewModel>();
         services.AddTransient<MonitorViewModel>();
         services.AddTransient<NetworkViewModel>();
+        services.AddTransient<ProvisioningViewModel>();
         services.AddSingleton<WslSnapshotService>(sp => new WslSnapshotService(
             sp.GetRequiredService<WslDistroService>(),
             () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

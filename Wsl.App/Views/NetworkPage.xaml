@@ -27,6 +27,11 @@
                           Severity="Error"
                           Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
 
+            <!-- Status bar (non-error, e.g. mode applied) -->
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Success"
+                          Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
+
             <!-- Distro selector -->
             <StackPanel Spacing="6">
                 <TextBlock Text="Distribution"
@@ -70,6 +75,39 @@
                             </ItemsControl>
                         </StackPanel>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Networking mode switcher (global, affects all distros) -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Networking Mode" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock Text="Global .wslconfig setting — applies to all WSL 2 distros. Changing it shuts WSL down."
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Bottom">
+                        <StackPanel Spacing="2" VerticalAlignment="Bottom">
+                            <TextBlock Text="Current (.wslconfig)"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="{x:Bind Vm.CurrentModeLabel, Mode=OneWay, FallbackValue='—'}"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       AutomationProperties.AutomationId="CurrentNetworkModeText" />
+                        </StackPanel>
+                        <ComboBox x:Name="ModeComboBox" MinWidth="240"
+                                  Header="Set mode"
+                                  ItemsSource="{x:Bind Vm.NetworkModes}"
+                                  SelectedItem="{x:Bind Vm.SelectedMode, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  AutomationProperties.AutomationId="NetworkModeComboBox" />
+                        <Button Content="Apply" VerticalAlignment="Bottom"
+                                Click="ApplyNetworkMode_Click"
+                                Style="{StaticResource AccentButtonStyle}"
+                                AutomationProperties.AutomationId="ApplyNetworkModeButton" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind Vm.SelectedMode.Description, Mode=OneWay, FallbackValue=''}"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
             </Border>
 

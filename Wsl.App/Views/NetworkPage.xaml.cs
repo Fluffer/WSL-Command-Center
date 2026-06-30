@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Wsl.App.Logic.ViewModels;
+using Wsl.Core;
 using Wsl.Core.Diagnostics;
 
 namespace Wsl.App.Views;
@@ -55,6 +56,32 @@ public sealed partial class NetworkPage : Page
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             await Vm.RestartNetworkingCommand.ExecuteAsync(null);
+    }
+
+    private async void ApplyNetworkMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm.IsBusy || Vm.SelectedMode is not { } opt) return;
+
+        var body = new StackPanel { Spacing = 8 };
+        body.Children.Add(new TextBlock
+        {
+            Text = $"Switch WSL networking mode to \"{opt.DisplayName}\" (networkingMode={opt.ConfigValue})?",
+            TextWrapping = TextWrapping.Wrap,
+        });
+        foreach (var warning in Vm.WarningsForMode(opt.Mode))
+            body.Children.Add(new TextBlock { Text = "•  " + warning, TextWrapping = TextWrapping.Wrap });
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Change networking mode?",
+            Content = body,
+            PrimaryButtonText = "Apply & shut down WSL",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            await Vm.ApplyNetworkModeCommand.ExecuteAsync(opt.Mode);
     }
 
     private async void DeletePortForward_Click(object sender, RoutedEventArgs e)

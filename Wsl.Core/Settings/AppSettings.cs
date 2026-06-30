@@ -17,4 +17,8 @@ public sealed class AppSettings
 
     /// <summary>Reveals developer/diagnostics tools (e.g. the WSL2 debug shell). Off by default.</summary>
     public bool DeveloperMode { get; set; }
+
+    /// <summary>Enables the experimental WSL Containers (wslc) page. wslc is a preview CLI whose
+    /// output format is unstable; the page is gated off by default until the user opts in.</summary>
+    public bool EnableWslcPreview { get; set; }
 }

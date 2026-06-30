@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Wsl.App.Views.ContainersPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:cont="using:Wsl.Core.Containers">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="1200" HorizontalAlignment="Stretch">
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Containers" Style="{StaticResource TitleTextBlockStyle}" />
+                <Border Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                        CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                    <TextBlock Text="PREVIEW" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                </Border>
+                <muxc:ProgressRing IsActive="{x:Bind Vm.IsBusy, Mode=OneWay}"
+                                   Width="20" Height="20" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Error / status bars -->
+            <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Informational" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
+
+            <!-- Preview gate -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="WSL Containers (wslc)" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="wslc is a preview CLI shipped with newer WSL builds. Its output format is unstable and may change between releases, so this page is experimental. The raw command box below is the most reliable surface." />
+                    <ToggleSwitch x:Name="PreviewToggle"
+                                  Header="Enable WSL Containers preview"
+                                  IsOn="{x:Bind Vm.IsPreviewEnabled, Mode=OneWay}"
+                                  Toggled="PreviewToggle_Toggled"
+                                  AutomationProperties.AutomationId="EnableWslcPreviewToggle" />
+                </StackPanel>
+            </Border>
+
+            <!-- Enabled content -->
+            <StackPanel Spacing="16" Visibility="{x:Bind ShowEnabled(Vm.IsPreviewEnabled), Mode=OneWay}">
+
+                <!-- Availability / unavailable guidance -->
+                <muxc:InfoBar IsOpen="{x:Bind ShowUnavailableBar(Vm.IsPreviewEnabled, Vm.Availability), Mode=OneWay}"
+                              IsClosable="False" Severity="Warning"
+                              Title="wslc unavailable"
+                              Message="wslc was not found or did not respond. Install or update the WSL preview, then press Refresh." />
+
+                <!-- Available: containers + raw + bridge -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ShowAvailable(Vm.Availability), Mode=OneWay}">
+
+                    <!-- Container list -->
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Containers" Style="{StaticResource SubtitleTextBlockStyle}"
+                                           VerticalAlignment="Center" />
+                                <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}"
+                                        AutomationProperties.AutomationId="RefreshContainersButton"
+                                        VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Parsed best-effort from `wslc ps`. If columns look wrong, use the raw command box."
+                                       Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <ListView ItemsSource="{x:Bind Vm.Containers}" SelectionMode="None"
+                                      AutomationProperties.AutomationId="ContainersList">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,0,0,4" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="cont:WslcContainer">
+                                        <Grid ColumnSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="2*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{x:Bind Name}"
+                                                       Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Image}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Status}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Raw command runner -->
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Raw wslc command" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="Runs `wslc &lt;your args&gt;` directly (no shell). Read-only verbs run immediately; anything else asks for confirmation."
+                                       Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                <TextBox Header="wslc" PlaceholderText="ps"
+                                         Text="{x:Bind Vm.RawCommand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         MinWidth="420"
+                                         AutomationProperties.AutomationId="RawCommandTextBox" />
+                                <Button Content="Run" VerticalAlignment="Bottom"
+                                        Click="RunRaw_Click"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        AutomationProperties.AutomationId="RunRawButton" />
+                            </StackPanel>
+                            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    CornerRadius="4" Padding="12"
+                                    Visibility="{x:Bind OutputVisibility(Vm.RawOutput), Mode=OneWay}">
+                                <TextBlock Text="{x:Bind Vm.RawOutput, Mode=OneWay}"
+                                           FontFamily="Cascadia Mono, Consolas, monospace"
+                                           IsTextSelectionEnabled="True" TextWrapping="Wrap"
+                                           AutomationProperties.AutomationId="RawOutputText" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Runtime bridge -->
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Container runtime bridge" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="Checks whether docker or podman is installed inside a distro. Informational only — nothing is configured."
+                                       Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom">
+                                <ComboBox Header="Distribution" MinWidth="220"
+                                          ItemsSource="{x:Bind Vm.Distros}"
+                                          SelectedItem="{x:Bind Vm.SelectedDistro, Mode=TwoWay}"
+                                          DisplayMemberPath="Name"
+                                          PlaceholderText="No distros"
+                                          AutomationProperties.AutomationId="BridgeDistroComboBox" />
+                                <Button Content="Detect" VerticalAlignment="Bottom"
+                                        Command="{x:Bind Vm.DetectRuntimeCommand}"
+                                        AutomationProperties.AutomationId="DetectRuntimeButton" />
+                                <TextBlock VerticalAlignment="Bottom"
+                                           Text="{x:Bind Vm.DetectedRuntime, Mode=OneWay, FallbackValue=''}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           AutomationProperties.AutomationId="DetectedRuntimeText" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

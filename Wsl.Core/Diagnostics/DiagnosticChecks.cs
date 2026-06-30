@@ -1,6 +1,23 @@
+using System.IO;
 using System.Linq;
 
 namespace Wsl.Core.Diagnostics;
+
+public sealed record DriveSpace(long FreeBytes, long TotalBytes);
+
+/// <summary>Abstracts the system-drive free/total space so DiskSpaceCheck is unit-testable.</summary>
+public interface ISystemDriveProbe { DriveSpace Get(); }
+
+public sealed class SystemDriveProbe : ISystemDriveProbe
+{
+    public DriveSpace Get()
+    {
+        var system = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        var root = Path.GetPathRoot(system);
+        var di = new DriveInfo(string.IsNullOrEmpty(root) ? "C:\\" : root);
+        return new DriveSpace(di.AvailableFreeSpace, di.TotalSize);
+    }
+}
 
 /// <summary>Verifies wsl.exe runs and reports a version.</summary>
 public sealed class WslInstalledCheck : IDiagnosticCheck
@@ -56,6 +73,29 @@ public sealed class DistroHealthCheck : IDiagnosticCheck
                 $"{wsl1.Count} distro(s) on WSL 1 (VM/.wslconfig features do not apply): {string.Join(", ", wsl1)}.");
 
         return new(Id, "Distributions", DiagnosticSeverity.Ok, $"{list.Count} distro(s) registered and healthy.");
+    }
+}
+
+/// <summary>Warns when the Windows system drive (where WSL VHDXs live) is low on space.
+/// WSL VHDXs grow on demand; an exhausted host drive corrupts distros and breaks installs.</summary>
+public sealed class DiskSpaceCheck : IDiagnosticCheck
+{
+    private const long Gb = 1024L * 1024 * 1024;
+    private readonly ISystemDriveProbe _probe;
+    public DiskSpaceCheck(ISystemDriveProbe probe) => _probe = probe;
+    public string Id => "disk-space";
+
+    public Task<DiagnosticResult> RunAsync(CancellationToken ct = default)
+    {
+        var s = _probe.Get();
+        var freeGb = s.FreeBytes / (double)Gb;
+        var detail = $"{freeGb:F1} GB free on the system drive.";
+        var sev = s.FreeBytes < 2 * Gb ? DiagnosticSeverity.Error
+                : s.FreeBytes < 10 * Gb ? DiagnosticSeverity.Warning
+                : DiagnosticSeverity.Ok;
+        if (sev != DiagnosticSeverity.Ok)
+            detail += " WSL VHDXs grow on demand; free space to avoid distro corruption or failed installs.";
+        return Task.FromResult(new DiagnosticResult(Id, "System drive space", sev, detail));
     }
 }
 

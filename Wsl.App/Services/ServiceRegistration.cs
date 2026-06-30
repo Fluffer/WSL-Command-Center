@@ -61,6 +61,16 @@ public static class ServiceRegistration
         services.AddSingleton<WslNetworkService>();
         services.AddSingleton<WslGpuService>();
 
+        // F2 health checks — each IDiagnosticCheck is injected into WslDiagnosticsService
+        // as IEnumerable in registration order.
+        services.AddSingleton<ISystemDriveProbe, SystemDriveProbe>();
+        services.AddSingleton<IDiagnosticCheck, WslInstalledCheck>();
+        services.AddSingleton<IDiagnosticCheck, DistroHealthCheck>();
+        services.AddSingleton<IDiagnosticCheck, DiskSpaceCheck>();
+        services.AddSingleton<IDiagnosticCheck, MirroredFirewallCheck>();
+        services.AddSingleton<WslDiagnosticsService>();
+        services.AddTransient<DiagnosticsViewModel>();
+
         // Monitoring probes + service (singletons — share CPU baseline across refreshes)
         services.AddSingleton<IVmProcessProbe, VmProcessProbe>();
         services.AddSingleton<IVhdxSizeProbe, RegistryVhdxSizeProbe>();

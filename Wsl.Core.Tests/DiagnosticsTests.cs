@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Wsl.App.Logic.ViewModels;
 using Wsl.Core;
 using Wsl.Core.Diagnostics;
 using Xunit;
@@ -59,6 +60,43 @@ public class DiagnosticsTests
         Assert.Equal(DiagnosticSeverity.Ok, results[1].Severity);   // run continued past the throw
     }
 
+    // ── DiagnosticsViewModel orchestration ───────────────────────────────────
+
+    [Fact]
+    public async Task DiagnosticsViewModel_Run_PopulatesRowsAndCountsProblems()
+    {
+        var diag = new WslDiagnosticsService(new IDiagnosticCheck[]
+        {
+            new StubCheck("a", new DiagnosticResult("a", "A", DiagnosticSeverity.Ok, "ok")),
+            new StubCheck("b", new DiagnosticResult("b", "B", DiagnosticSeverity.Warning, "warn")),
+        });
+        var runner = new FakeProcessRunner();
+        var vm = new DiagnosticsViewModel(diag, new WslDistroService(runner), new WslSystemService(runner));
+
+        await vm.RunCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, vm.Rows.Count);
+        Assert.Contains("1 issue", vm.StatusMessage);
+        Assert.Null(vm.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DiagnosticsViewModel_ApplyRestartFix_CallsShutdown()
+    {
+        var diag = new WslDiagnosticsService(new IDiagnosticCheck[]
+        {
+            new StubCheck("a", new DiagnosticResult("a", "A", DiagnosticSeverity.Ok, "ok")),
+        });
+        var runner = new FakeProcessRunner();
+        var vm = new DiagnosticsViewModel(diag, new WslDistroService(runner), new WslSystemService(runner));
+
+        await vm.ApplyFixCommand.ExecuteAsync(
+            new DiagnosticFix(WslDiagnosticsService.Fixes.RestartWsl, "Restart WSL", Destructive: true));
+
+        Assert.Contains("--shutdown", runner.AllArgs.Last());
+        Assert.Contains("Applied", vm.StatusMessage!);
+    }
+
     // ── WslInstalledCheck ────────────────────────────────────────────────────
 
     [Fact]
@@ -109,6 +147,26 @@ public class DiagnosticsTests
         var r = await new DistroHealthCheck(new WslDistroService(runner)).RunAsync();
         Assert.Equal(DiagnosticSeverity.Info, r.Severity);
         Assert.Contains("WSL 1", r.Detail);
+    }
+
+    // ── DiskSpaceCheck ───────────────────────────────────────────────────────
+
+    private sealed class FakeDriveProbe : ISystemDriveProbe
+    {
+        private readonly DriveSpace _s;
+        public FakeDriveProbe(long freeGb) => _s = new DriveSpace(freeGb * 1024L * 1024 * 1024, 512L * 1024 * 1024 * 1024);
+        public DriveSpace Get() => _s;
+    }
+
+    [Theory]
+    [InlineData(1, DiagnosticSeverity.Error)]
+    [InlineData(5, DiagnosticSeverity.Warning)]
+    [InlineData(50, DiagnosticSeverity.Ok)]
+    public async Task DiskSpaceCheck_SeverityByFreeSpace(long freeGb, DiagnosticSeverity expected)
+    {
+        var r = await new DiskSpaceCheck(new FakeDriveProbe(freeGb)).RunAsync();
+        Assert.Equal(expected, r.Severity);
+        Assert.Contains("GB free", r.Detail);
     }
 
     // ── MirroredFirewallCheck ────────────────────────────────────────────────

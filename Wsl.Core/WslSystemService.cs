@@ -20,6 +20,13 @@ public class WslSystemService
         return ParseVersion(result.StdOut);
     }
 
+    /// <summary>Runs `wsl --update` to pull the latest WSL kernel/runtime from the Store/GitHub.</summary>
+    public async Task UpdateAsync(CancellationToken ct = default)
+    {
+        var result = await _runner.RunAsync("wsl.exe", new[] { "--update" }, null, ct);
+        WslErrorMapper.ThrowIfFailed(result, "Update WSL");
+    }
+
     internal static WslStatus ParseStatus(string stdout)
     {
         string? distro = null; int? version = null;

@@ -23,6 +23,8 @@ public partial class DashboardViewModel : ObservableObject
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
+    /// <summary>Non-error outcome (e.g. fstrim result). Separate from <see cref="ErrorMessage"/>.</summary>
+    [ObservableProperty] private string? _statusMessage;
 
     /// <summary>One-line WSL platform summary ("WSL 2.4.13.0 · kernel … · default: …").
     /// Null when the info could not be retrieved; the view collapses the status line then.</summary>
@@ -70,6 +72,23 @@ public partial class DashboardViewModel : ObservableObject
 
     [RelayCommand]
     public Task OptimizeAsync(string name) => ActionThenRefresh(() => _disk.OptimizeAsync(name));
+
+    /// <summary>Reclaims space via fstrim and surfaces the outcome (bytes trimmed, or why it
+    /// could not run) in <see cref="StatusMessage"/>. Not an ActionThenRefresh because we keep
+    /// the returned message.</summary>
+    [RelayCommand]
+    public async Task ReclaimAsync(string name)
+    {
+        IsBusy = true; ErrorMessage = null; StatusMessage = null;
+        try
+        {
+            var outcome = await _disk.TrimAsync(name);
+            StatusMessage = outcome;       // set before refresh so a refresh failure can't swallow the outcome
+            await RefreshAsync();          // sizes may have changed (clears ErrorMessage, not StatusMessage)
+        }
+        catch (WslException ex) { ErrorMessage = ex.Message; }
+        finally { IsBusy = false; }
+    }
 
     /// <summary>Moves a distro's storage to another directory. Two parameters, so a plain method
     /// (codebehind invokes VM methods directly; [RelayCommand] supports at most one).

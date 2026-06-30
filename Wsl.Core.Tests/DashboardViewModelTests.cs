@@ -22,6 +22,22 @@ public class DashboardViewModelTests
         => new(new WslDistroService(runner), new WslDiskService(runner), new WslSystemService(runner));
 
     [Fact]
+    public async Task Reclaim_runs_fstrim_and_sets_status()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "/: 1.2 GiB (1288490188 bytes) trimmed\n");  // fstrim
+        runner.Enqueue(0, ListOutput);     // RefreshAsync -> ListAsync
+        runner.Enqueue(0, VersionOutput);  // status summary (version)
+        runner.Enqueue(0, StatusOutput);   // status summary (status)
+        var vm = NewVm(runner);
+
+        await vm.ReclaimCommand.ExecuteAsync("Ubuntu");
+
+        Assert.Contains("trimmed", vm.StatusMessage);
+        Assert.Null(vm.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Refresh_populates_distros()
     {
         var runner = new FakeProcessRunner();

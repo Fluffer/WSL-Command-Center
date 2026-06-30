@@ -57,6 +57,23 @@ public sealed partial class DashboardPage : Page
             await Vm.OptimizeAsync(name);
     }
 
+    private async void Reclaim_Click(object s, RoutedEventArgs e)
+    {
+        if (s is not FrameworkElement { Tag: string name }) return;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Reclaim space?",
+            Content = $"Runs fstrim inside '{name}' to discard freed blocks so its virtual disk can shrink. " +
+                      "Safe and non-destructive, but it will start the distro if it is stopped.",
+            PrimaryButtonText = "Reclaim",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            await Vm.ReclaimCommand.ExecuteAsync(name);
+    }
+
     private async void MoveDistro_Click(object s, RoutedEventArgs e)
     {
         if (s is not FrameworkElement { Tag: string name }) return;
@@ -144,7 +161,8 @@ public sealed partial class DashboardPage : Page
             checklist.Children.Add(CheckLine(false, $"Could not locate the virtual disk (ext4.vhdx) for '{name}'."));
             return false;
         }
-        checklist.Children.Add(CheckLine(true, $"Found virtual disk ({vhdx.SizeBytes / 1_073_741_824.0:F1} GB)."));
+        checklist.Children.Add(CheckLine(true,
+            $"Found virtual disk ({vhdx.SizeBytes / 1_073_741_824.0:F1} GB{(vhdx.IsSparse ? ", sparse" : "")})."));
 
         long freeBytes;
         string driveFormat;

@@ -33,6 +33,8 @@
                           Message="{x:Bind Vm.WslStatusSummary, Mode=OneWay}" />
             <muxc:InfoBar IsOpen="{x:Bind Vm.ErrorMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
                           Severity="Error" Message="{x:Bind Vm.ErrorMessage, Mode=OneWay}" />
+            <muxc:InfoBar IsOpen="{x:Bind Vm.StatusMessage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                          Severity="Success" Message="{x:Bind Vm.StatusMessage, Mode=OneWay}" />
             <muxc:InfoBar x:Name="CopiedBar" Severity="Success" IsClosable="True"
                           Title="Copied to clipboard" />
         </StackPanel>
@@ -116,9 +118,14 @@
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8A7;" />
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
-                                            <MenuFlyoutItem Text="Optimize disk (reclaim space)…" Click="Optimize_Click" Tag="{x:Bind Name}">
+                                            <MenuFlyoutItem Text="Optimize disk (make sparse)…" Click="Optimize_Click" Tag="{x:Bind Name}">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xEDA2;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="Reclaim space (fstrim)…" Click="Reclaim_Click" Tag="{x:Bind Name}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE74D;" />
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
                                             <MenuFlyoutItem Text="Move distro…" Click="MoveDistro_Click" Tag="{x:Bind Name}">

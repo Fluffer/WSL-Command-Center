@@ -29,7 +29,7 @@ $csproj = [xml](Get-Content (Join-Path $root 'Wsl.App\Wsl.App.csproj'))
 $version = ($csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1) ?? '1.0.0'
 $sha = (git -C $root rev-parse --short HEAD 2>$null) ?? 'nogit'
 
-$publishDir = Join-Path $root "Wsl.App\bin\$Configuration\net9.0-windows10.0.26100.0\$rid\publish"
+$publishDir = Join-Path $root "Wsl.App\bin\$Configuration\net10.0-windows10.0.26100.0\$rid\publish"
 
 # Stale publish dirs mix assemblies from earlier publishes with different settings (e.g. a
 # trimmed run) and the app then dies at startup with bizarre TypeLoadExceptions. Always clean.
@@ -41,7 +41,7 @@ dotnet publish (Join-Path $root 'Wsl.App\Wsl.App.csproj') `
 if ($LASTEXITCODE -ne 0) { throw "Wsl.App publish failed" }
 if (-not (Test-Path (Join-Path $publishDir 'Wsl.App.exe'))) { throw "Wsl.App.exe missing in $publishDir" }
 
-$brokerPublishDir = Join-Path $root "Wsl.Broker\bin\$Configuration\net9.0\$rid\publish"
+$brokerPublishDir = Join-Path $root "Wsl.Broker\bin\$Configuration\net10.0\$rid\publish"
 if (Test-Path $brokerPublishDir) { Remove-Item $brokerPublishDir -Recurse -Force }
 
 Write-Host "==> Publishing Wsl.Broker (self-contained single file)" -ForegroundColor Cyan

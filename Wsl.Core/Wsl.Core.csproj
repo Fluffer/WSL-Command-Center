@@ -4,13 +4,12 @@
     <ProjectReference Include="..\Wsl.Contracts\Wsl.Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Registry access for GetVhdxInfo (Lxss BasePath lookup); plain net9.0 TFM needs the package. -->
-    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-  </ItemGroup>
+  <!-- Registry access for GetVhdxInfo (Lxss BasePath lookup) needed no PackageReference here:
+       Microsoft.Win32.Registry ships in the net10.0 shared framework (the old 5.0.0 package
+       reference now trips NU1510 as redundant). -->
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

@@ -67,6 +67,81 @@
 
                     <!-- ===== Containers ===== -->
                     <StackPanel x:Name="ContainersPanel" Spacing="16">
+
+                        <!-- Deploy container -->
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Deploy container" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock TextWrapping="Wrap"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="Deploy creates AND starts the container in the background (`wslc run --detach`). Create only stages it — it appears below as Created, and you start it later with the Start button." />
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Header="Image" PlaceholderText="ubuntu:latest" MinWidth="240"
+                                              Text="{x:Bind Vm.DeployImage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployImageTextBox" />
+                                    <ComboBox Header="Pulled images" MinWidth="200"
+                                              ItemsSource="{x:Bind Vm.Images}" DisplayMemberPath="RepoTag"
+                                              PlaceholderText="Pick a pulled image"
+                                              SelectionChanged="DeployImagePicker_SelectionChanged"
+                                              AutomationProperties.AutomationId="DeployImagePickerCombo" />
+                                    <TextBox Header="Name (optional)" MinWidth="180"
+                                              Text="{x:Bind Vm.DeployName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployNameTextBox" />
+                                </StackPanel>
+
+                                <TextBox Header="Command (optional)" PlaceholderText="e.g. sh -c &quot;echo hi&quot;"
+                                          Text="{x:Bind Vm.DeployCommand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          AutomationProperties.AutomationId="DeployCommandTextBox" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Header="Environment (optional, KEY=VALUE per line)" MinWidth="280"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                                              Text="{x:Bind Vm.DeployEnv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployEnvTextBox" />
+                                    <TextBox Header="Published ports (optional, e.g. 8080:80)" MinWidth="220"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                                              PlaceholderText="comma or newline separated"
+                                              Text="{x:Bind Vm.DeployPorts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployPortsTextBox" />
+                                    <TextBox Header="Volumes (optional, e.g. myvol:/data)" MinWidth="220"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                                              PlaceholderText="comma or newline separated"
+                                              Text="{x:Bind Vm.DeployVolumes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployVolumesTextBox" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Header="Memory (optional)" PlaceholderText="e.g. 512M or 1G" MinWidth="140"
+                                              Text="{x:Bind Vm.DeployMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployMemoryTextBox" />
+                                    <TextBox Header="CPUs (optional)" PlaceholderText="e.g. 0.5 or 2" MinWidth="140"
+                                              Text="{x:Bind Vm.DeployCpus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployCpusTextBox" />
+                                    <TextBox Header="Network (optional)" MinWidth="180"
+                                              Text="{x:Bind Vm.DeployNetwork, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="DeployNetworkTextBox" />
+                                    <ComboBox Header="Existing networks" MinWidth="180"
+                                              ItemsSource="{x:Bind Vm.Networks}" DisplayMemberPath="Name"
+                                              PlaceholderText="Pick a network"
+                                              SelectionChanged="DeployNetworkPicker_SelectionChanged"
+                                              AutomationProperties.AutomationId="DeployNetworkPickerCombo" />
+                                    <CheckBox Content="Remove on exit (--rm)" VerticalAlignment="Bottom"
+                                              IsChecked="{x:Bind Vm.DeployRemoveOnExit, Mode=TwoWay}"
+                                              AutomationProperties.AutomationId="DeployRemoveCheckBox" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="Deploy" Command="{x:Bind Vm.DeployContainerCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            AutomationProperties.AutomationId="DeployButton" />
+                                    <Button Content="Create only" Command="{x:Bind Vm.CreateContainerOnlyCommand}"
+                                            AutomationProperties.AutomationId="CreateOnlyButton" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource CardBorderStyle}">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="12">

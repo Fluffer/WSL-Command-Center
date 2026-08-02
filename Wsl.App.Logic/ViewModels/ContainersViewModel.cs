@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wsl.Core;
@@ -108,6 +109,19 @@ public partial class ContainersViewModel : ObservableObject
 
     [ObservableProperty] private string? _containerOutputTitle;
     [ObservableProperty] private string? _containerOutput;
+
+    // ── Deploy container form ──────────────────────────────────────────────
+
+    [ObservableProperty] private string _deployImage = "";
+    [ObservableProperty] private string _deployName = "";
+    [ObservableProperty] private string _deployCommand = "";
+    [ObservableProperty] private string _deployEnv = "";
+    [ObservableProperty] private string _deployPorts = "";
+    [ObservableProperty] private string _deployVolumes = "";
+    [ObservableProperty] private string _deployMemory = "";
+    [ObservableProperty] private string _deployCpus = "";
+    [ObservableProperty] private string _deployNetwork = "";
+    [ObservableProperty] private bool _deployRemoveOnExit;
 
     // ── Images tab ──────────────────────────────────────────────────────────
 
@@ -275,15 +289,26 @@ public partial class ContainersViewModel : ObservableObject
         await LoadContainersAsync();
     });
 
-    /// <summary>Caller is expected to confirm first — removes the container instance.</summary>
+    /// <summary>
+    /// Caller is expected to confirm first — removes the container instance. A running container
+    /// needs <c>--force</c>: wslc otherwise refuses with WSLC_E_CONTAINER_IS_RUNNING, which left
+    /// the app unable to remove anything it had just deployed. <see cref="NeedsForceRemove"/>
+    /// decides, and the confirmation dialog says so before this runs. State is Unknown only on
+    /// columnar-fallback rows, where running-ness isn't knowable — force is not assumed there, and
+    /// wslc's own error tells the user to stop it first.
+    /// </summary>
     [RelayCommand]
     public Task RemoveContainerAsync(WslcContainer c) => Guarded(async () =>
     {
-        var r = await _wslc.RemoveAsync(c.Id);
+        var r = await _wslc.RemoveAsync(c.Id, force: NeedsForceRemove(c.State));
         if (!r.Ok) { ErrorMessage = ErrText(r); return; }
         StatusMessage = $"Removed {c.Name}.";
         await LoadContainersAsync();
     });
+
+    /// <summary>True when removing this container requires <c>--force</c> (it is running).</summary>
+    public static bool NeedsForceRemove(WslcContainerState state)
+        => state == WslcContainerState.Running;
 
     /// <summary>Caller is expected to confirm first — removes ALL stopped containers.</summary>
     [RelayCommand]
@@ -328,6 +353,120 @@ public partial class ContainersViewModel : ObservableObject
     /// <summary>True when Stop/Restart should be offered — only while the container is running.</summary>
     public static bool CanStopOrRestart(WslcContainerState state)
         => state == WslcContainerState.Running;
+
+    // ── Deploy container form ──────────────────────────────────────────────
+    // Two distinct verbs, deliberately not collapsed into one command: Deploy runs the container
+    // immediately (detached), Create only stages it (appears as Created, started later by the user).
+
+    /// <summary>`wslc run --detach` — creates AND starts the container, detached.</summary>
+    [RelayCommand]
+    public Task DeployContainerAsync() => RunDeployFormAsync(_wslc.RunDetachedAsync, "Deployed");
+
+    /// <summary>`wslc create` — stages the container without starting it.</summary>
+    [RelayCommand]
+    public Task CreateContainerOnlyAsync() => RunDeployFormAsync(_wslc.CreateAsync, "Created");
+
+    private Task RunDeployFormAsync(
+        Func<WslcRunOptions, CancellationToken, Task<RawResult>> invoke, string verb)
+        => Guarded(async () =>
+        {
+            var options = BuildDeployOptions();
+            if (options is null) return; // validation error already set as ErrorMessage
+
+            var r = await invoke(options, default);
+            if (!r.Ok) { ErrorMessage = ErrText(r); return; } // form retained for correction
+
+            var id = (r.StdOut ?? "").Trim();
+            StatusMessage = string.IsNullOrEmpty(id) ? $"{verb} container." : $"{verb} {id}.";
+            ClearDeployForm();
+            await LoadContainersAsync();
+        });
+
+    /// <summary>Validates and maps the Deploy form fields onto <see cref="WslcRunOptions"/>. Returns
+    /// null and sets <see cref="ErrorMessage"/> on the first validation failure, so the caller never
+    /// invokes wslc with bad input.</summary>
+    private WslcRunOptions? BuildDeployOptions()
+    {
+        var image = DeployImage.Trim();
+        if (string.IsNullOrWhiteSpace(image)) { ErrorMessage = "Enter an image to deploy."; return null; }
+
+        var env = ParseEnvLines(DeployEnv, out var envError);
+        if (envError is not null) { ErrorMessage = envError; return null; }
+
+        string? cpus = null;
+        if (!string.IsNullOrWhiteSpace(DeployCpus))
+        {
+            cpus = DeployCpus.Trim();
+            if (!double.TryParse(cpus, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+            {
+                ErrorMessage = $"CPUs must be a number, e.g. 0.5 or 2 (got \"{cpus}\").";
+                return null;
+            }
+        }
+
+        var command = WslcCommand.Tokenize(DeployCommand);
+        var ports = SplitList(DeployPorts);
+        var volumes = SplitList(DeployVolumes);
+
+        return new WslcRunOptions(
+            Image: image,
+            Name: string.IsNullOrWhiteSpace(DeployName) ? null : DeployName.Trim(),
+            Command: command.Count > 0 ? command : null,
+            Env: env,
+            PublishedPorts: ports.Count > 0 ? ports : null,
+            Volumes: volumes.Count > 0 ? volumes : null,
+            Memory: string.IsNullOrWhiteSpace(DeployMemory) ? null : DeployMemory.Trim(),
+            Cpus: cpus,
+            Network: string.IsNullOrWhiteSpace(DeployNetwork) ? null : DeployNetwork.Trim(),
+            Remove: DeployRemoveOnExit);
+    }
+
+    /// <summary>Parses `KEY=VALUE` lines (blank lines ignored). A non-blank line with no `=` is a
+    /// validation error, not a silently dropped row — <paramref name="error"/> is set and the
+    /// returned dictionary should be discarded in that case.</summary>
+    private static IReadOnlyDictionary<string, string>? ParseEnvLines(string input, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(input)) return null;
+
+        var env = new Dictionary<string, string>();
+        foreach (var rawLine in input.Replace("\r", "").Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0) continue;
+
+            var idx = line.IndexOf('=');
+            if (idx <= 0)
+            {
+                error = $"Invalid environment line (expected KEY=VALUE): \"{line}\".";
+                return null;
+            }
+            env[line[..idx].Trim()] = line[(idx + 1)..].Trim();
+        }
+        return env.Count > 0 ? env : null;
+    }
+
+    /// <summary>Splits comma- or newline-separated free text (published ports, volumes) into a
+    /// trimmed, non-empty list.</summary>
+    private static List<string> SplitList(string input)
+        => string.IsNullOrWhiteSpace(input)
+            ? new List<string>()
+            : input.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+
+    private void ClearDeployForm()
+    {
+        DeployImage = "";
+        DeployName = "";
+        DeployCommand = "";
+        DeployEnv = "";
+        DeployPorts = "";
+        DeployVolumes = "";
+        DeployMemory = "";
+        DeployCpus = "";
+        DeployNetwork = "";
+        DeployRemoveOnExit = false;
+    }
 
     // ── Images tab ──────────────────────────────────────────────────────────
 

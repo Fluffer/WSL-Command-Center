@@ -136,8 +136,14 @@ public sealed partial class ContainersPage : Page
     private async void RemoveContainer_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).DataContext is not WslcContainer c) return;
-        if (!await ConfirmAsync("Remove container?",
-                $"Remove container \"{c.Name}\"? This deletes the container instance.", "Remove"))
+        // A running container can only be removed with --force. Say that plainly rather than
+        // force-removing behind a dialog that reads like an ordinary delete.
+        var force = ContainersViewModel.NeedsForceRemove(c.State);
+        var body = force
+            ? $"Container \"{c.Name}\" is still running. Removing it now force-stops it first, "
+              + "so anything running inside is killed without a graceful shutdown. This cannot be undone."
+            : $"Remove container \"{c.Name}\"? This deletes the container instance.";
+        if (!await ConfirmAsync("Remove container?", body, force ? "Force remove" : "Remove"))
             return;
         await Vm.RemoveContainerCommand.ExecuteAsync(c);
     }
@@ -160,6 +166,20 @@ public sealed partial class ContainersPage : Page
                 "Remove ALL stopped containers? This cannot be undone.", "Prune"))
             return;
         await Vm.PruneContainersCommand.ExecuteAsync(null);
+    }
+
+    // ── Event handlers: Deploy container form ──────────────────────────────
+    // These pickers are conveniences over the free-text Image/Network boxes — selecting an entry
+    // just copies its identifier into the corresponding TwoWay-bound field.
+
+    private void DeployImagePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox { SelectedItem: WslcImage image }) Vm.DeployImage = image.RepoTag;
+    }
+
+    private void DeployNetworkPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox { SelectedItem: WslcNetwork network }) Vm.DeployNetwork = network.Name;
     }
 
     // ── Event handlers: Images tab ─────────────────────────────────────────

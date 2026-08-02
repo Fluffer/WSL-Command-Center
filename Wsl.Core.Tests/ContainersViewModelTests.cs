@@ -218,13 +218,32 @@ public class ContainersViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task RemoveContainer_sends_id()
+    public async Task RemoveContainer_forces_when_running()
+    {
+        // wslc refuses to remove a running container (WSLC_E_CONTAINER_IS_RUNNING), so the app
+        // could not remove anything it had just deployed until -f was passed for this case.
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "wcc-probe");
+        runner.Enqueue(0, "[]");
+        var vm = NewVm(runner);
+        var c = SampleContainer();   // State = Running
+
+        await vm.RemoveContainerAsync(c);
+
+        Assert.Equal(new[] { "remove", "-f", c.Id }, runner.AllArgs[0]);
+    }
+
+    [Theory]
+    [InlineData(WslcContainerState.Exited)]
+    [InlineData(WslcContainerState.Created)]
+    [InlineData(WslcContainerState.Unknown)]   // columnar-fallback rows: don't assume force
+    public async Task RemoveContainer_omits_force_when_not_running(WslcContainerState state)
     {
         var runner = new FakeProcessRunner();
         runner.Enqueue(0, "wcc-probe");
         runner.Enqueue(0, "[]");
         var vm = NewVm(runner);
-        var c = SampleContainer();
+        var c = SampleContainer() with { State = state };
 
         await vm.RemoveContainerAsync(c);
 
@@ -751,5 +770,175 @@ public class ContainersViewModelTests : IDisposable
         await vm.DetectRuntimeAsync();
 
         Assert.Equal(ContainerRuntime.Docker, vm.DetectedRuntime);
+    }
+
+    // ── Deploy container form ───────────────────────────────────────────────
+
+    private void FillFullDeployForm(ContainersViewModel vm)
+    {
+        vm.DeployImage = "ubuntu:latest";
+        vm.DeployName = "my-app";
+        vm.DeployCommand = "sh -c \"echo hi\"";
+        vm.DeployEnv = "FOO=bar\n\nBAZ=qux ";
+        vm.DeployPorts = "8080:80, 9090:90";
+        vm.DeployVolumes = "myvol:/data";
+        vm.DeployMemory = "512M";
+        vm.DeployCpus = "1.5";
+        vm.DeployNetwork = "mynet";
+        vm.DeployRemoveOnExit = true;
+    }
+
+    [Fact]
+    public async Task DeployContainer_builds_full_argv_with_detach()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "abc123\n");   // run --detach
+        runner.Enqueue(0, "[]");         // reload
+        var vm = NewVm(runner);
+        FillFullDeployForm(vm);
+
+        await vm.DeployContainerAsync();
+
+        var args = runner.AllArgs[0];
+        Assert.Equal("run", args[0]);
+        Assert.Contains("--detach", args);
+        Assert.Contains("--name", args);
+        Assert.Contains("my-app", args);
+        Assert.Contains("-m", args);
+        Assert.Contains("512M", args);
+        Assert.Contains("--cpus", args);
+        Assert.Contains("1.5", args);
+        Assert.Contains("--network", args);
+        Assert.Contains("mynet", args);
+        Assert.Contains("--rm", args);
+        Assert.Contains("-e", args);
+        Assert.Contains("FOO=bar", args);
+        Assert.Contains("BAZ=qux", args);
+        Assert.Contains("-p", args);
+        Assert.Contains("8080:80", args);
+        Assert.Contains("9090:90", args);
+        Assert.Contains("-v", args);
+        Assert.Contains("myvol:/data", args);
+        // image + tokenized command trail the flags
+        var imageIdx = Array.IndexOf(args, "ubuntu:latest");
+        Assert.True(imageIdx > 0);
+        Assert.Equal("sh", args[imageIdx + 1]);
+        Assert.Equal("-c", args[imageIdx + 2]);
+        Assert.Equal("echo hi", args[imageIdx + 3]);
+    }
+
+    [Fact]
+    public async Task CreateContainerOnly_omits_detach()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "abc123\n"); // create
+        runner.Enqueue(0, "[]");       // reload
+        var vm = NewVm(runner);
+        vm.DeployImage = "ubuntu:latest";
+
+        await vm.CreateContainerOnlyAsync();
+
+        var args = runner.AllArgs[0];
+        Assert.Equal("create", args[0]);
+        Assert.DoesNotContain("--detach", args);
+        Assert.Equal("ubuntu:latest", args[^1]);
+    }
+
+    [Fact]
+    public async Task DeployContainer_blocks_blank_image()
+    {
+        var runner = new FakeProcessRunner();
+        var vm = NewVm(runner);
+
+        await vm.DeployContainerAsync();
+
+        Assert.NotNull(vm.ErrorMessage);
+        Assert.Empty(runner.AllArgs);
+    }
+
+    [Fact]
+    public async Task DeployContainer_blocks_malformed_env_line()
+    {
+        var runner = new FakeProcessRunner();
+        var vm = NewVm(runner);
+        vm.DeployImage = "ubuntu:latest";
+        vm.DeployEnv = "NOVALUEHERE";
+
+        await vm.DeployContainerAsync();
+
+        Assert.NotNull(vm.ErrorMessage);
+        Assert.Contains("NOVALUEHERE", vm.ErrorMessage);
+        Assert.Empty(runner.AllArgs);
+    }
+
+    [Fact]
+    public async Task DeployContainer_blocks_non_numeric_cpus()
+    {
+        var runner = new FakeProcessRunner();
+        var vm = NewVm(runner);
+        vm.DeployImage = "ubuntu:latest";
+        vm.DeployCpus = "not-a-number";
+
+        await vm.DeployContainerAsync();
+
+        Assert.NotNull(vm.ErrorMessage);
+        Assert.Empty(runner.AllArgs);
+    }
+
+    [Fact]
+    public async Task DeployContainer_tokenizes_quoted_command()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "id");
+        runner.Enqueue(0, "[]");
+        var vm = NewVm(runner);
+        vm.DeployImage = "ubuntu:latest";
+        vm.DeployCommand = "sh -c \"echo hello world\"";
+
+        await vm.DeployContainerAsync();
+
+        var args = runner.AllArgs[0];
+        Assert.Equal(new[] { "run", "--detach", "ubuntu:latest", "sh", "-c", "echo hello world" }, args);
+    }
+
+    [Fact]
+    public async Task DeployContainer_on_success_refreshes_list_and_clears_form()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(0, "newcontainerid\n");
+        runner.Enqueue(0, ContainerListJson);
+        var vm = NewVm(runner);
+        FillFullDeployForm(vm);
+
+        await vm.DeployContainerAsync();
+
+        Assert.Null(vm.ErrorMessage);
+        Assert.Contains("newcontainerid", vm.StatusMessage);
+        Assert.Single(vm.Containers);
+        Assert.Equal("", vm.DeployImage);
+        Assert.Equal("", vm.DeployName);
+        Assert.Equal("", vm.DeployCommand);
+        Assert.Equal("", vm.DeployEnv);
+        Assert.Equal("", vm.DeployPorts);
+        Assert.Equal("", vm.DeployVolumes);
+        Assert.Equal("", vm.DeployMemory);
+        Assert.Equal("", vm.DeployCpus);
+        Assert.Equal("", vm.DeployNetwork);
+        Assert.False(vm.DeployRemoveOnExit);
+    }
+
+    [Fact]
+    public async Task DeployContainer_on_failure_retains_form_and_surfaces_stderr()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(1, "", "no such image");
+        var vm = NewVm(runner);
+        vm.DeployImage = "nonexistent:latest";
+
+        await vm.DeployContainerAsync();
+
+        Assert.Equal("no such image", vm.ErrorMessage);
+        Assert.Equal("nonexistent:latest", vm.DeployImage);
+        Assert.Empty(vm.Containers);
     }
 }

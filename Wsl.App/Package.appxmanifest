@@ -13,7 +13,7 @@
   <Identity
     Name="WslCommandCenter"
     Publisher="CN=Peter Eg, O=PETER EG, L=Singapore, C=SG"
-    Version="1.0.0.0" />
+    Version="1.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="0370D04C-FA36-427C-B3F5-C7F272C94FC5" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

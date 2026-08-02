@@ -4,7 +4,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:cont="using:Wsl.Core.Containers">
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:cont="using:Wsl.Core.Containers"
+    xmlns:vm="using:Wsl.App.Logic.ViewModels">
 
     <ScrollViewer>
         <StackPanel Padding="24" Spacing="16" MaxWidth="1200" HorizontalAlignment="Stretch">
@@ -33,7 +35,7 @@
                     <TextBlock Text="WSL Containers (wslc)" Style="{StaticResource SubtitleTextBlockStyle}" />
                     <TextBlock TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="wslc is a preview CLI shipped with newer WSL builds. Its output format is unstable and may change between releases, so this page is experimental. The raw command box below is the most reliable surface." />
+                               Text="wslc is a preview CLI shipped with newer WSL builds. Its output format is unstable and may change between releases, so this page is experimental. The raw command box below is a useful escape hatch when a tab looks wrong." />
                     <ToggleSwitch x:Name="PreviewToggle"
                                   Header="Enable WSL Containers preview"
                                   IsOn="{x:Bind Vm.IsPreviewEnabled, Mode=OneWay}"
@@ -51,53 +53,521 @@
                               Title="wslc unavailable"
                               Message="wslc was not found or did not respond. Install or update the WSL preview, then press Refresh." />
 
-                <!-- Available: containers + raw + bridge -->
+                <!-- Available: tabbed content -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ShowAvailable(Vm.Availability), Mode=OneWay}">
 
-                    <!-- Container list -->
-                    <Border Style="{StaticResource CardBorderStyle}">
-                        <StackPanel Spacing="10">
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <TextBlock Text="Containers" Style="{StaticResource SubtitleTextBlockStyle}"
-                                           VerticalAlignment="Center" />
-                                <Button Content="Refresh" Command="{x:Bind Vm.RefreshCommand}"
-                                        AutomationProperties.AutomationId="RefreshContainersButton"
-                                        VerticalAlignment="Center" />
-                            </StackPanel>
-                            <TextBlock Text="Parsed best-effort from `wslc ps`. If columns look wrong, use the raw command box."
-                                       Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <ListView ItemsSource="{x:Bind Vm.Containers}" SelectionMode="None"
-                                      AutomationProperties.AutomationId="ContainersList">
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Setter Property="Padding" Value="0" />
-                                        <Setter Property="Margin" Value="0,0,0,4" />
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="cont:WslcContainer">
-                                        <Grid ColumnSpacing="16">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="2*" />
-                                                <ColumnDefinition Width="2*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{x:Bind Name}"
-                                                       Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                            <TextBlock Grid.Column="1" Text="{x:Bind Image}"
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            <TextBlock Grid.Column="2" Text="{x:Bind Status}"
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </StackPanel>
-                    </Border>
+                    <muxc:SelectorBar x:Name="TabBar" SelectionChanged="TabBar_SelectionChanged">
+                        <muxc:SelectorBarItem x:Name="ContainersTab" Text="Containers" IsSelected="True" />
+                        <muxc:SelectorBarItem x:Name="ImagesTab" Text="Images" />
+                        <muxc:SelectorBarItem x:Name="VolumesTab" Text="Volumes" />
+                        <muxc:SelectorBarItem x:Name="NetworksTab" Text="Networks" />
+                        <muxc:SelectorBarItem x:Name="SessionsTab" Text="Sessions" />
+                        <muxc:SelectorBarItem x:Name="ConfigTab" Text="Configuration" />
+                    </muxc:SelectorBar>
 
-                    <!-- Raw command runner -->
+                    <!-- ===== Containers ===== -->
+                    <StackPanel x:Name="ContainersPanel" Spacing="16">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="Containers" Style="{StaticResource SubtitleTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{x:Bind Vm.RefreshContainersCommand}"
+                                            AutomationProperties.AutomationId="RefreshContainersButton" />
+                                    <Button Content="Prune stopped" Click="PruneContainers_Click"
+                                            AutomationProperties.AutomationId="PruneContainersButton" />
+                                </StackPanel>
+                                <TextBlock Text="Listing is JSON via `wslc list --all --format json`, with a columnar fallback if that fails."
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                                <ListView ItemsSource="{x:Bind Vm.Containers}" SelectionMode="None"
+                                          AutomationProperties.AutomationId="ContainersList">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="cont:WslcContainer">
+                                            <Border Style="{StaticResource CardBorderStyle}"
+                                                    AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
+                                                <StackPanel Spacing="8">
+                                                    <Grid ColumnSpacing="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="2*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                                            <TextBlock Text="{x:Bind ShortId}"
+                                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Text="{x:Bind Image}"
+                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="2" Text="{x:Bind State}" />
+                                                        <TextBlock Grid.Column="3" Text="{x:Bind Ports}"
+                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="4" Text="{x:Bind Status}"
+                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Grid>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Button Content="Start" Click="StartContainer_Click"
+                                                                Visibility="{x:Bind State, Converter={StaticResource ContainerActionVis}, ConverterParameter=start}"
+                                                                AutomationProperties.AutomationId="StartContainerButton" />
+                                                        <Button Content="Stop" Click="StopContainer_Click"
+                                                                Visibility="{x:Bind State, Converter={StaticResource ContainerActionVis}, ConverterParameter=run}"
+                                                                AutomationProperties.AutomationId="StopContainerButton" />
+                                                        <Button Content="Restart" Click="RestartContainer_Click"
+                                                                Visibility="{x:Bind State, Converter={StaticResource ContainerActionVis}, ConverterParameter=run}"
+                                                                AutomationProperties.AutomationId="RestartContainerButton" />
+                                                        <Button Content="Kill" Click="KillContainer_Click"
+                                                                AutomationProperties.AutomationId="KillContainerButton" />
+                                                        <Button Content="Remove" Click="RemoveContainer_Click"
+                                                                AutomationProperties.AutomationId="RemoveContainerButton" />
+                                                        <Button Content="Logs" Click="ContainerLogs_Click"
+                                                                AutomationProperties.AutomationId="ContainerLogsButton" />
+                                                        <Button Content="Inspect" Click="InspectContainer_Click"
+                                                                AutomationProperties.AutomationId="InspectContainerButton" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <TextBlock Text="No containers."
+                                           Visibility="{x:Bind EmptyVisibility(Vm.Containers.Count), Mode=OneWay}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           AutomationProperties.AutomationId="ContainersEmptyText" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Logs / Inspect output -->
+                        <Border Style="{StaticResource CardBorderStyle}"
+                                Visibility="{x:Bind OutputVisibility(Vm.ContainerOutput), Mode=OneWay}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind Vm.ContainerOutputTitle, Mode=OneWay}"
+                                           Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        CornerRadius="4" Padding="12" MaxHeight="360">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <TextBlock Text="{x:Bind Vm.ContainerOutput, Mode=OneWay}"
+                                                   FontFamily="Cascadia Mono, Consolas, monospace"
+                                                   IsTextSelectionEnabled="True" TextWrapping="Wrap"
+                                                   AutomationProperties.AutomationId="ContainerOutputText" />
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===== Images ===== -->
+                    <StackPanel x:Name="ImagesPanel" Spacing="16" Visibility="Collapsed">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="Images" Style="{StaticResource SubtitleTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{x:Bind Vm.RefreshImagesCommand}"
+                                            AutomationProperties.AutomationId="RefreshImagesButton" />
+                                    <Button Content="Prune unused" Click="PruneImages_Click"
+                                            AutomationProperties.AutomationId="PruneImagesButton" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <TextBox Header="Pull image" PlaceholderText="ubuntu:latest" MinWidth="280"
+                                              Text="{x:Bind Vm.PullImageName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="PullImageTextBox" />
+                                    <Button Content="Pull" VerticalAlignment="Bottom"
+                                            Command="{x:Bind Vm.PullImageCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            AutomationProperties.AutomationId="PullImageButton" />
+                                </StackPanel>
+
+                                <ListView ItemsSource="{x:Bind Vm.Images}" SelectionMode="Single"
+                                          SelectedItem="{x:Bind Vm.SelectedImage, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="ImagesList">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="cont:WslcImage">
+                                            <Border Style="{StaticResource CardBorderStyle}"
+                                                    AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind RepoTag}"
+                                                               Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind ShortId}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind SizeHuman}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind Created, Converter={StaticResource DateTimeOffsetToString}}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <Button Grid.Column="4" Content="Remove" Click="RemoveImage_Click"
+                                                            VerticalAlignment="Center"
+                                                            AutomationProperties.AutomationId="RemoveImageButton" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <TextBlock Text="No images."
+                                           Visibility="{x:Bind EmptyVisibility(Vm.Images.Count), Mode=OneWay}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           AutomationProperties.AutomationId="ImagesEmptyText" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{x:Bind TagSourceText(Vm.SelectedImage), Mode=OneWay}"
+                                               VerticalAlignment="Bottom" MinWidth="220"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBox Header="Tag as" PlaceholderText="myrepo/name:tag" MinWidth="220"
+                                              Text="{x:Bind Vm.TagTargetInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="TagTargetTextBox" />
+                                    <Button Content="Tag" VerticalAlignment="Bottom"
+                                            IsEnabled="{x:Bind Vm.SelectedImage, Mode=OneWay, Converter={StaticResource NotNullToBool}}"
+                                            Command="{x:Bind Vm.TagSelectedImageCommand}"
+                                            AutomationProperties.AutomationId="TagImageButton" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Registry -->
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Registry" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Login is used by Pull/Push/Tag against a private registry. The password is piped to wslc and never stored."
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <TextBox Header="Server (optional)" PlaceholderText="registry.example.com" MinWidth="220"
+                                              Text="{x:Bind Vm.RegistryServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="RegistryServerTextBox" />
+                                    <TextBox Header="Username" MinWidth="160"
+                                              Text="{x:Bind Vm.RegistryUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="RegistryUsernameTextBox" />
+                                    <PasswordBox x:Name="RegistryPasswordBox" Header="Password" MinWidth="160"
+                                                 AutomationProperties.AutomationId="RegistryPasswordBox" />
+                                    <Button Content="Login" VerticalAlignment="Bottom" Click="RegistryLogin_Click"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            AutomationProperties.AutomationId="RegistryLoginButton" />
+                                    <Button Content="Logout" VerticalAlignment="Bottom"
+                                            Command="{x:Bind Vm.RegistryLogoutCommand}"
+                                            AutomationProperties.AutomationId="RegistryLogoutButton" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===== Volumes ===== -->
+                    <StackPanel x:Name="VolumesPanel" Spacing="16" Visibility="Collapsed">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="Volumes" Style="{StaticResource SubtitleTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{x:Bind Vm.RefreshVolumesCommand}"
+                                            AutomationProperties.AutomationId="RefreshVolumesButton" />
+                                    <Button Content="Prune unused" Click="PruneVolumes_Click"
+                                            AutomationProperties.AutomationId="PruneVolumesButton" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <TextBox Header="Name" MinWidth="220"
+                                              Text="{x:Bind Vm.NewVolumeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="NewVolumeNameTextBox" />
+                                    <ComboBox Header="Driver" MinWidth="140" IsEditable="True"
+                                              ItemsSource="{x:Bind Vm.VolumeDriverOptions}"
+                                              Text="{x:Bind Vm.NewVolumeDriver, Mode=TwoWay}"
+                                              AutomationProperties.AutomationId="NewVolumeDriverCombo" />
+                                    <Button Content="Create" VerticalAlignment="Bottom"
+                                            Command="{x:Bind Vm.CreateVolumeCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            AutomationProperties.AutomationId="CreateVolumeButton" />
+                                </StackPanel>
+
+                                <ListView ItemsSource="{x:Bind Vm.Volumes}" SelectionMode="None"
+                                          AutomationProperties.AutomationId="VolumesList">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="cont:WslcVolume">
+                                            <Border Style="{StaticResource CardBorderStyle}"
+                                                    AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind Name}"
+                                                               Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Driver}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <Button Grid.Column="2" Content="Remove" Click="RemoveVolume_Click"
+                                                            VerticalAlignment="Center"
+                                                            AutomationProperties.AutomationId="RemoveVolumeButton" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <TextBlock Text="No volumes."
+                                           Visibility="{x:Bind EmptyVisibility(Vm.Volumes.Count), Mode=OneWay}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           AutomationProperties.AutomationId="VolumesEmptyText" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===== Networks ===== -->
+                    <StackPanel x:Name="NetworksPanel" Spacing="16" Visibility="Collapsed">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="Networks" Style="{StaticResource SubtitleTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{x:Bind Vm.RefreshNetworksCommand}"
+                                            AutomationProperties.AutomationId="RefreshNetworksButton" />
+                                    <Button Content="Prune unused" Click="PruneNetworks_Click"
+                                            AutomationProperties.AutomationId="PruneNetworksButton" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <TextBox Header="Name" MinWidth="220"
+                                              Text="{x:Bind Vm.NewNetworkName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="NewNetworkNameTextBox" />
+                                    <TextBox Header="Driver" PlaceholderText="bridge" MinWidth="140"
+                                              Text="{x:Bind Vm.NewNetworkDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              AutomationProperties.AutomationId="NewNetworkDriverTextBox" />
+                                    <Button Content="Create" VerticalAlignment="Bottom"
+                                            Command="{x:Bind Vm.CreateNetworkCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            AutomationProperties.AutomationId="CreateNetworkButton" />
+                                </StackPanel>
+
+                                <ListView ItemsSource="{x:Bind Vm.Networks}" SelectionMode="None"
+                                          AutomationProperties.AutomationId="NetworksList">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="cont:WslcNetwork">
+                                            <Border Style="{StaticResource CardBorderStyle}"
+                                                    AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind Name}"
+                                                               Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Driver}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind Id}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <Button Grid.Column="3" Content="Remove" Click="RemoveNetwork_Click"
+                                                            VerticalAlignment="Center"
+                                                            AutomationProperties.AutomationId="RemoveNetworkButton" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <TextBlock Text="No networks."
+                                           Visibility="{x:Bind EmptyVisibility(Vm.Networks.Count), Mode=OneWay}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           AutomationProperties.AutomationId="NetworksEmptyText" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===== Sessions ===== -->
+                    <StackPanel x:Name="SessionsPanel" Spacing="16" Visibility="Collapsed">
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="Sessions" Style="{StaticResource SubtitleTextBlockStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{x:Bind Vm.RefreshSessionsCommand}"
+                                            AutomationProperties.AutomationId="RefreshSessionsButton" />
+                                    <Button Content="Terminate default session" Click="TerminateSession_Click"
+                                            AutomationProperties.AutomationId="TerminateSessionButton" />
+                                </StackPanel>
+                                <TextBlock Text="A wslc session is the VM-level container host. Terminating it stops every container running in it."
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                                <ListView ItemsSource="{x:Bind Vm.Sessions}" SelectionMode="None"
+                                          AutomationProperties.AutomationId="SessionsList">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:WslcSessionRow">
+                                            <Border Style="{StaticResource CardBorderStyle}"
+                                                    AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind DisplayName}"
+                                                               Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind CreatorPid}" VerticalAlignment="Center"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind StorageHuman}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind SwapHuman}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="4" Text="{x:Bind TotalHuman}" VerticalAlignment="Center"
+                                                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                                    <Button Grid.Column="5" Content="Reclaim" Click="ReclaimSession_Click"
+                                                            VerticalAlignment="Center"
+                                                            AutomationProperties.AutomationId="ReclaimSessionButton" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <TextBlock Text="No sessions."
+                                           Visibility="{x:Bind EmptyVisibility(Vm.Sessions.Count), Mode=OneWay}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           AutomationProperties.AutomationId="SessionsEmptyText" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===== Configuration (settings.yaml) ===== -->
+                    <StackPanel x:Name="ConfigPanel" Spacing="4" Visibility="Collapsed">
+                        <muxc:InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                      Message="{x:Bind Vm.SessionChangesMessage}" Margin="0,0,0,8" />
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="{x:Bind SettingsFileHint(Vm.SettingsFilePath), Mode=OneWay}" />
+
+                        <controls:SettingsCard Header="CPU count"
+                                                Description="session.cpuCount — a positive integer, or 'default' (all available CPUs). Leave blank to keep the key commented out.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xE950;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Spacing="2">
+                                <TextBox Text="{x:Bind Vm.SettingsCpuCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         PlaceholderText="e.g. 4 or default" MinWidth="220"
+                                         AutomationProperties.AutomationId="WslcCpuCountTb" />
+                                <TextBlock Text="{x:Bind Vm.CpuCountError, Mode=OneWay}"
+                                           Visibility="{x:Bind ErrorVisibility(Vm.CpuCountError), Mode=OneWay}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="Memory size"
+                                                Description="session.memorySize — e.g. 2GB, or 'default' (half of available memory). Leave blank to keep the key commented out.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xEEA0;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Spacing="2">
+                                <TextBox Text="{x:Bind Vm.SettingsMemorySize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         PlaceholderText="e.g. 2GB or default" MinWidth="220"
+                                         AutomationProperties.AutomationId="WslcMemorySizeTb" />
+                                <TextBlock Text="{x:Bind Vm.MemorySizeError, Mode=OneWay}"
+                                           Visibility="{x:Bind ErrorVisibility(Vm.MemorySizeError), Mode=OneWay}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="Max storage size"
+                                                Description="session.maxStorageSize — e.g. 500GB, or 'default' (1TB). Leave blank to keep the key commented out.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xEDA2;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Spacing="2">
+                                <TextBox Text="{x:Bind Vm.SettingsMaxStorageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         PlaceholderText="e.g. 500GB or default" MinWidth="220"
+                                         AutomationProperties.AutomationId="WslcMaxStorageSizeTb" />
+                                <TextBlock Text="{x:Bind Vm.MaxStorageSizeError, Mode=OneWay}"
+                                           Visibility="{x:Bind ErrorVisibility(Vm.MaxStorageSizeError), Mode=OneWay}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="Default binding address"
+                                                Description="session.defaultBindingAddress — the host address published ports bind to by default (default: 127.0.0.1). Leave blank to keep the key commented out.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xE968;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Spacing="2">
+                                <TextBox Text="{x:Bind Vm.SettingsDefaultBindingAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         PlaceholderText="e.g. 127.0.0.1 or default" MinWidth="220"
+                                         AutomationProperties.AutomationId="WslcBindingAddressTb" />
+                                <TextBlock Text="{x:Bind Vm.DefaultBindingAddressError, Mode=OneWay}"
+                                           Visibility="{x:Bind ErrorVisibility(Vm.DefaultBindingAddressError), Mode=OneWay}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="Credential store"
+                                                Description="Top-level credentialStore — backend used to save registry login credentials.">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xE72E;" />
+                            </controls:SettingsCard.HeaderIcon>
+                            <ComboBox MinWidth="200"
+                                      ItemsSource="{x:Bind Vm.CredentialStoreOptions}"
+                                      SelectedItem="{x:Bind Vm.SettingsCredentialStore, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="WslcCredentialStoreCombo" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Margin="0,8,0,0"
+                            Header="Apply"
+                            Description="Reload settings.yaml from disk, or write your changes to it.">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Load" Command="{x:Bind Vm.LoadSettingsCommand}"
+                                        AutomationProperties.AutomationId="LoadWslcSettingsBtn" />
+                                <Button Content="Save" Command="{x:Bind Vm.SaveSettingsCommand}"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        AutomationProperties.AutomationId="SaveWslcSettingsBtn" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                    </StackPanel>
+
+                    <!-- Raw command runner (always available as an escape hatch) -->
                     <Border Style="{StaticResource CardBorderStyle}">
                         <StackPanel Spacing="10">
                             <TextBlock Text="Raw wslc command" Style="{StaticResource SubtitleTextBlockStyle}" />

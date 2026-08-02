@@ -4,6 +4,12 @@
     <ProjectReference Include="..\Wsl.Contracts\Wsl.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets the test project exercise `internal` parse/format helpers directly instead of
+         forcing them public purely for testability (e.g. WslcSessionService.ParseSessionList). -->
+    <InternalsVisibleTo Include="Wsl.Core.Tests" />
+  </ItemGroup>
+
   <!-- Registry access for GetVhdxInfo (Lxss BasePath lookup) needed no PackageReference here:
        Microsoft.Win32.Registry ships in the net10.0 shared framework (the old 5.0.0 package
        reference now trips NU1510 as redundant). -->

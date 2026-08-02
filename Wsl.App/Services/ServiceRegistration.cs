@@ -26,6 +26,10 @@ public static class ServiceRegistration
         services.AddSingleton<WslBackupService>();
         services.AddSingleton<WslProvisioningService>();
         services.AddSingleton<Wsl.Core.Containers.WslcService>();
+        services.AddSingleton<Wsl.Core.Containers.WslcResourceService>();
+        services.AddSingleton<Wsl.Core.Containers.WslcSettingsService>();
+        services.AddSingleton<Wsl.Core.Containers.WslcSessionService>(sp =>
+            new Wsl.Core.Containers.WslcSessionService(sp.GetRequiredService<IProcessRunner>()));
         services.AddSingleton<WslConfigService>();
         services.AddSingleton<BootstrapStateStore>();
         services.AddSingleton<StatePreservingExport>();

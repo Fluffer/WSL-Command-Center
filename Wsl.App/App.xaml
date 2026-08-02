@@ -16,6 +16,9 @@
             <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
             <conv:BytesToGbConverter x:Key="BytesToGb" />
             <conv:BoolToStatusGlyphConverter x:Key="BoolToStatusGlyph" />
+            <conv:ContainerActionVisibilityConverter x:Key="ContainerActionVis" />
+            <conv:DateTimeOffsetToStringConverter x:Key="DateTimeOffsetToString" />
+            <conv:ListItemAccessibleNameConverter x:Key="ListItemAccessibleName" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

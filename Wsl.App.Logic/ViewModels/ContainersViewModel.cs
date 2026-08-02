@@ -8,43 +8,179 @@ using Wsl.Core.Settings;
 namespace Wsl.App.Logic.ViewModels;
 
 /// <summary>
+/// UI-facing composition of a wslc session with its resolved disk usage, so the Sessions tab can
+/// bind everything about a row from one object without a second lookup at render time.
+/// <see cref="WslcSessionService.GetDiskUsage"/> is synchronous (plain file-system probes), so this
+/// is built eagerly whenever the session list is (re)loaded.
+/// </summary>
+public record WslcSessionRow(WslcSession Session, WslcSessionDiskUsage Usage)
+{
+    public int Id => Session.Id;
+    public int CreatorPid => Session.CreatorPid;
+    public string DisplayName => Session.DisplayName;
+    public string StorageHuman => FormatBytes(Usage.Storage?.LogicalBytes);
+    public string SwapHuman => FormatBytes(Usage.Swap?.LogicalBytes);
+    public string TotalHuman => Usage.TotalHumanReadable;
+
+    /// <summary>Mirrors <c>WslcSessionService.FormatBytes</c> (that one is internal to Wsl.Core),
+    /// so per-VHD sizes can be rendered here the same way the combined total already is.</summary>
+    private static string FormatBytes(long? bytes)
+    {
+        if (bytes is not long b) return "unknown";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        double value = b;
+        var unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+        return unit == 0 ? $"{value:0} {units[unit]}" : $"{value:0.#} {units[unit]}";
+    }
+}
+
+/// <summary>
 /// Drives the WSL Containers (wslc) preview page. The feature is gated behind a persisted
 /// opt-in flag; even when enabled, the page degrades gracefully if wslc is absent or unreachable.
-/// The raw-command runner is the primary surface; the structured container list is best-effort.
+/// Covers containers, images, volumes, networks, sessions and the wslc settings.yaml surface, plus
+/// the raw-command escape hatch and the informational runtime-detection bridge.
 /// </summary>
 public partial class ContainersViewModel : ObservableObject
 {
     private readonly WslcService _wslc;
+    private readonly WslcResourceService _resources;
+    private readonly WslcSettingsService _wslcSettings;
+    private readonly WslcSessionService _sessions;
     private readonly WslDistroService _distros;
     private readonly IThemeService _settings;
 
-    public ContainersViewModel(WslcService wslc, WslDistroService distros, IThemeService settings)
+    public ContainersViewModel(
+        WslcService wslc,
+        WslcResourceService resources,
+        WslcSettingsService wslcSettings,
+        WslcSessionService sessions,
+        WslDistroService distros,
+        IThemeService settings)
     {
         _wslc = wslc;
+        _resources = resources;
+        _wslcSettings = wslcSettings;
+        _sessions = sessions;
         _distros = distros;
         _settings = settings;
         _isPreviewEnabled = _settings.Load().EnableWslcPreview;
     }
 
+    // ── Collections ─────────────────────────────────────────────────────────
+
     public ObservableCollection<WslcContainer> Containers { get; } = new();
+    public ObservableCollection<WslcImage> Images { get; } = new();
+    public ObservableCollection<WslcVolume> Volumes { get; } = new();
+    public ObservableCollection<WslcNetwork> Networks { get; } = new();
+    public ObservableCollection<WslcSessionRow> Sessions { get; } = new();
     public ObservableCollection<Distro> Distros { get; } = new();
+
+    // ── Page-level state ────────────────────────────────────────────────────
 
     [ObservableProperty] private bool _isPreviewEnabled;
     [ObservableProperty] private WslcAvailability? _availability;
-    [ObservableProperty] private Distro? _selectedDistro;
-    [ObservableProperty] private ContainerRuntime? _detectedRuntime;
-    [ObservableProperty] private string _rawCommand = "";
-    [ObservableProperty] private string _rawOutput = "";
-
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _errorMessage;
+
+    // ── Raw command box ─────────────────────────────────────────────────────
+
+    [ObservableProperty] private string _rawCommand = "";
+    [ObservableProperty] private string _rawOutput = "";
 
     /// <summary>True when the typed raw command's leading verb is not on the read-only allowlist,
     /// so the UI should confirm before running it.</summary>
     public bool RawNeedsConfirm => !WslcCommand.IsReadOnly(RawCommand);
 
     partial void OnRawCommandChanged(string value) => OnPropertyChanged(nameof(RawNeedsConfirm));
+
+    // ── Runtime bridge ──────────────────────────────────────────────────────
+
+    [ObservableProperty] private Distro? _selectedDistro;
+    [ObservableProperty] private ContainerRuntime? _detectedRuntime;
+
+    // ── Container detail output (Logs / Inspect) ───────────────────────────
+
+    [ObservableProperty] private string? _containerOutputTitle;
+    [ObservableProperty] private string? _containerOutput;
+
+    // ── Images tab ──────────────────────────────────────────────────────────
+
+    [ObservableProperty] private string _pullImageName = "";
+    [ObservableProperty] private WslcImage? _selectedImage;
+    [ObservableProperty] private string _tagTargetInput = "";
+    [ObservableProperty] private string _registryServer = "";
+    [ObservableProperty] private string _registryUsername = "";
+
+    // ── Volumes tab ─────────────────────────────────────────────────────────
+
+    [ObservableProperty] private string _newVolumeName = "";
+    [ObservableProperty] private string _newVolumeDriver = "guest";
+    public IReadOnlyList<string> VolumeDriverOptions { get; } = new[] { "guest", "vhd" };
+
+    // ── Networks tab ────────────────────────────────────────────────────────
+
+    [ObservableProperty] private string _newNetworkName = "";
+    [ObservableProperty] private string _newNetworkDriver = "bridge";
+
+    // ── Configuration tab (settings.yaml) ──────────────────────────────────
+
+    [ObservableProperty] private string? _settingsCpuCount;
+    [ObservableProperty] private string? _settingsMemorySize;
+    [ObservableProperty] private string? _settingsMaxStorageSize;
+    [ObservableProperty] private string? _settingsDefaultBindingAddress;
+    [ObservableProperty] private CredentialStoreKind _settingsCredentialStore;
+
+    [ObservableProperty] private string? _cpuCountError;
+    [ObservableProperty] private string? _memorySizeError;
+    [ObservableProperty] private string? _maxStorageSizeError;
+    [ObservableProperty] private string? _defaultBindingAddressError;
+
+    public string SettingsFilePath => _wslcSettings.SettingsFilePath;
+    public string SessionChangesMessage => WslcSettingsService.SessionChangesRequireNewSessionMessage;
+    public IReadOnlyList<CredentialStoreKind> CredentialStoreOptions { get; } = Enum.GetValues<CredentialStoreKind>();
+
+    public bool SettingsHasErrors =>
+        CpuCountError is not null || MemorySizeError is not null ||
+        MaxStorageSizeError is not null || DefaultBindingAddressError is not null;
+
+    partial void OnSettingsCpuCountChanged(string? value)
+    {
+        CpuCountError = ValidateOrNull(value, WslcSettingsService.ValidateCpuCount);
+        OnPropertyChanged(nameof(SettingsHasErrors));
+    }
+
+    partial void OnSettingsMemorySizeChanged(string? value)
+    {
+        MemorySizeError = ValidateOrNull(value, WslcSettingsService.ValidateMemorySize);
+        OnPropertyChanged(nameof(SettingsHasErrors));
+    }
+
+    partial void OnSettingsMaxStorageSizeChanged(string? value)
+    {
+        MaxStorageSizeError = ValidateOrNull(value, WslcSettingsService.ValidateMaxStorageSize);
+        OnPropertyChanged(nameof(SettingsHasErrors));
+    }
+
+    partial void OnSettingsDefaultBindingAddressChanged(string? value)
+    {
+        DefaultBindingAddressError = ValidateOrNull(value, WslcSettingsService.ValidateDefaultBindingAddress);
+        OnPropertyChanged(nameof(SettingsHasErrors));
+    }
+
+    /// <summary>A blank field means "leave unset" (the key stays commented out) — only a non-blank
+    /// value is run through the Validate* helper.</summary>
+    private static string? ValidateOrNull(string? value, Func<string, string?> validate)
+        => string.IsNullOrWhiteSpace(value) ? null : validate(value.Trim());
+
+    private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    // ── Preview opt-in ──────────────────────────────────────────────────────
 
     /// <summary>Persists the preview opt-in (without clobbering other settings) and, when enabling,
     /// probes for wslc.</summary>
@@ -56,8 +192,22 @@ public partial class ContainersViewModel : ObservableObject
         IsPreviewEnabled = enabled;
 
         if (enabled) await RefreshAsync();
-        else { Availability = null; Containers.Clear(); Distros.Clear(); }
+        else
+        {
+            Availability = null;
+            Containers.Clear();
+            Images.Clear();
+            Volumes.Clear();
+            Networks.Clear();
+            Sessions.Clear();
+            Distros.Clear();
+        }
     }
+
+    // ── Master refresh (Containers + runtime-bridge distros) ──────────────
+    // Images/Volumes/Networks/Sessions/Configuration are lazy-loaded the first time their tab is
+    // selected (each has its own Refresh command below) so opening the page doesn't fan out into
+    // a burst of wslc invocations before the user asks for them.
 
     [RelayCommand]
     public async Task RefreshAsync()
@@ -76,11 +226,381 @@ public partial class ContainersViewModel : ObservableObject
                 return;
             }
 
-            foreach (var c in await _wslc.ListContainersAsync()) Containers.Add(c);
-            foreach (var d in await _distros.ListAsync()) Distros.Add(d);
+            await LoadContainersAsync();
+            await LoadDistrosAsync();
             StatusMessage = $"wslc {Availability.Version ?? "preview"} — {Containers.Count} container(s).";
         });
     }
+
+    // ── Containers tab ──────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public Task RefreshContainersAsync() => Guarded(LoadContainersAsync);
+
+    [RelayCommand]
+    public Task StartContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.StartAsync(c.Id);
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = $"Started {c.Name}.";
+        await LoadContainersAsync();
+    });
+
+    [RelayCommand]
+    public Task StopContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.StopAsync(c.Id);
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = $"Stopped {c.Name}.";
+        await LoadContainersAsync();
+    });
+
+    [RelayCommand]
+    public Task RestartContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.RestartAsync(c.Id);
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = $"Restarted {c.Name}.";
+        await LoadContainersAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — killing forcibly stops without a graceful
+    /// shutdown.</summary>
+    [RelayCommand]
+    public Task KillContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.KillAsync(c.Id);
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = $"Killed {c.Name}.";
+        await LoadContainersAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes the container instance.</summary>
+    [RelayCommand]
+    public Task RemoveContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.RemoveAsync(c.Id);
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = $"Removed {c.Name}.";
+        await LoadContainersAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes ALL stopped containers.</summary>
+    [RelayCommand]
+    public Task PruneContainersAsync() => Guarded(async () =>
+    {
+        var r = await _wslc.PruneContainersAsync();
+        if (!r.Ok) { ErrorMessage = ErrText(r); return; }
+        StatusMessage = "Pruned stopped containers.";
+        await LoadContainersAsync();
+    });
+
+    [RelayCommand]
+    public Task ShowContainerLogsAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.GetLogsAsync(c.Id, tailLines: 200, timestamps: true);
+        ContainerOutputTitle = $"Logs — {c.Name}";
+        ContainerOutput = Compose(r);
+        if (!r.Ok) ErrorMessage = ErrText(r);
+    });
+
+    [RelayCommand]
+    public Task InspectContainerAsync(WslcContainer c) => Guarded(async () =>
+    {
+        var r = await _wslc.InspectAsync(c.Id);
+        ContainerOutputTitle = $"Inspect — {c.Name}";
+        ContainerOutput = Compose(r);
+        if (!r.Ok) ErrorMessage = ErrText(r);
+    });
+
+    private async Task LoadContainersAsync()
+    {
+        Containers.Clear();
+        foreach (var c in await _wslc.ListContainersAsync()) Containers.Add(c);
+    }
+
+    /// <summary>True when Start should be offered for a container in this state — a container
+    /// that has never run, or one that has already exited. Pure and static so the page's
+    /// per-row action gating is unit-testable without a XAML host.</summary>
+    public static bool CanStart(WslcContainerState state)
+        => state is WslcContainerState.Created or WslcContainerState.Exited;
+
+    /// <summary>True when Stop/Restart should be offered — only while the container is running.</summary>
+    public static bool CanStopOrRestart(WslcContainerState state)
+        => state == WslcContainerState.Running;
+
+    // ── Images tab ──────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public Task RefreshImagesAsync() => Guarded(LoadImagesAsync);
+
+    [RelayCommand]
+    public Task PullImageAsync() => Guarded(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(PullImageName)) { ErrorMessage = "Enter an image to pull, e.g. ubuntu:latest."; return; }
+        var name = PullImageName.Trim();
+        var r = await _resources.PullImageAsync(name);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Pulled {name}.";
+        PullImageName = "";
+        await LoadImagesAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes the image.</summary>
+    [RelayCommand]
+    public Task RemoveImageAsync(WslcImage image) => Guarded(async () =>
+    {
+        var r = await _resources.RemoveImageAsync(image.RepoTag, force: true);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Removed {image.RepoTag}.";
+        await LoadImagesAsync();
+    });
+
+    [RelayCommand]
+    public Task TagSelectedImageAsync() => Guarded(async () =>
+    {
+        if (SelectedImage is null) { ErrorMessage = "Select an image to tag."; return; }
+        if (string.IsNullOrWhiteSpace(TagTargetInput)) { ErrorMessage = "Enter a target tag, e.g. myrepo/name:tag."; return; }
+        var target = TagTargetInput.Trim();
+        var r = await _resources.TagImageAsync(SelectedImage.RepoTag, target);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Tagged {SelectedImage.RepoTag} as {target}.";
+        TagTargetInput = "";
+        await LoadImagesAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes ALL images not referenced by any
+    /// container.</summary>
+    [RelayCommand]
+    public Task PruneImagesAsync() => Guarded(async () =>
+    {
+        var r = await _resources.PruneImagesAsync(all: true);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = "Pruned unused images.";
+        await LoadImagesAsync();
+    });
+
+    /// <summary>Login pipes <paramref name="password"/> to wslc over stdin and never retains it —
+    /// there is no field or property backing it; the caller (code-behind) clears its PasswordBox
+    /// immediately after this call returns, on either outcome.</summary>
+    [RelayCommand]
+    public Task RegistryLoginAsync(string password) => Guarded(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(RegistryUsername) || string.IsNullOrWhiteSpace(password))
+        {
+            ErrorMessage = "Username and password are required.";
+            return;
+        }
+        var server = string.IsNullOrWhiteSpace(RegistryServer) ? null : RegistryServer.Trim();
+        var r = await _resources.LoginAsync(server, RegistryUsername.Trim(), password);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = server is null ? "Registry login succeeded." : $"Logged in to {server}.";
+    });
+
+    [RelayCommand]
+    public Task RegistryLogoutAsync() => Guarded(async () =>
+    {
+        var server = string.IsNullOrWhiteSpace(RegistryServer) ? null : RegistryServer.Trim();
+        var r = await _resources.LogoutAsync(server);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = server is null ? "Registry logout succeeded." : $"Logged out of {server}.";
+    });
+
+    private async Task LoadImagesAsync()
+    {
+        Images.Clear();
+        foreach (var i in await _resources.ListImagesAsync()) Images.Add(i);
+    }
+
+    // ── Volumes tab ─────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public Task RefreshVolumesAsync() => Guarded(LoadVolumesAsync);
+
+    [RelayCommand]
+    public Task CreateVolumeAsync() => Guarded(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(NewVolumeName)) { ErrorMessage = "Enter a volume name."; return; }
+        var name = NewVolumeName.Trim();
+        var driver = string.IsNullOrWhiteSpace(NewVolumeDriver) ? null : NewVolumeDriver.Trim();
+        var r = await _resources.CreateVolumeAsync(name, driver);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Created volume {name}.";
+        NewVolumeName = "";
+        await LoadVolumesAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes the volume and its data.</summary>
+    [RelayCommand]
+    public Task RemoveVolumeAsync(WslcVolume v) => Guarded(async () =>
+    {
+        var r = await _resources.RemoveVolumeAsync(v.Name);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Removed volume {v.Name}.";
+        await LoadVolumesAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes ALL unused volumes and their data.</summary>
+    [RelayCommand]
+    public Task PruneVolumesAsync() => Guarded(async () =>
+    {
+        var r = await _resources.PruneVolumesAsync(all: true);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = "Pruned unused volumes.";
+        await LoadVolumesAsync();
+    });
+
+    private async Task LoadVolumesAsync()
+    {
+        Volumes.Clear();
+        foreach (var v in await _resources.ListVolumesAsync()) Volumes.Add(v);
+    }
+
+    // ── Networks tab ────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public Task RefreshNetworksAsync() => Guarded(LoadNetworksAsync);
+
+    [RelayCommand]
+    public Task CreateNetworkAsync() => Guarded(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(NewNetworkName)) { ErrorMessage = "Enter a network name."; return; }
+        var name = NewNetworkName.Trim();
+        var driver = string.IsNullOrWhiteSpace(NewNetworkDriver) ? null : NewNetworkDriver.Trim();
+        var r = await _resources.CreateNetworkAsync(name, driver);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Created network {name}.";
+        NewNetworkName = "";
+        await LoadNetworksAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes the network.</summary>
+    [RelayCommand]
+    public Task RemoveNetworkAsync(WslcNetwork n) => Guarded(async () =>
+    {
+        var r = await _resources.RemoveNetworkAsync(n.Name);
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = $"Removed network {n.Name}.";
+        await LoadNetworksAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — removes ALL unused networks.</summary>
+    [RelayCommand]
+    public Task PruneNetworksAsync() => Guarded(async () =>
+    {
+        var r = await _resources.PruneNetworksAsync();
+        if (!r.Ok) { ErrorMessage = ActionErrText(r); return; }
+        StatusMessage = "Pruned unused networks.";
+        await LoadNetworksAsync();
+    });
+
+    private async Task LoadNetworksAsync()
+    {
+        Networks.Clear();
+        foreach (var n in await _resources.ListNetworksAsync()) Networks.Add(n);
+    }
+
+    // ── Sessions tab ────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public Task RefreshSessionsAsync() => Guarded(LoadSessionsAsync);
+
+    /// <summary>Caller is expected to confirm first — terminates the DEFAULT wslc session, which
+    /// stops every container running in it, not just one.</summary>
+    [RelayCommand]
+    public Task TerminateSessionAsync() => Guarded(async () =>
+    {
+        var r = await _sessions.TerminateDefaultSessionAsync();
+        if (!r.Success) { ErrorMessage = r.Message; return; }
+        StatusMessage = r.Message;
+        await LoadSessionsAsync();
+    });
+
+    /// <summary>Caller is expected to confirm first — reclaim terminates the default session
+    /// (stopping every container in it) before marking its VHDs sparse.</summary>
+    [RelayCommand]
+    public Task ReclaimSessionAsync(WslcSessionRow row) => Guarded(async () =>
+    {
+        var r = await _sessions.ReclaimAsync(row.DisplayName);
+        StatusMessage = r.Message;
+        if (!r.Success) ErrorMessage = r.Message;
+        await LoadSessionsAsync();
+    });
+
+    private async Task LoadSessionsAsync()
+    {
+        Sessions.Clear();
+        foreach (var s in await _sessions.ListSessionsAsync())
+            Sessions.Add(new WslcSessionRow(s, _sessions.GetDiskUsage(s.DisplayName)));
+    }
+
+    // ── Configuration tab (settings.yaml) ──────────────────────────────────
+
+    [RelayCommand]
+    public Task LoadSettingsAsync() => Guarded(async () =>
+    {
+        var result = await _wslcSettings.ReadAsync();
+        SettingsCpuCount = result.Settings.CpuCount;
+        SettingsMemorySize = result.Settings.MemorySize;
+        SettingsMaxStorageSize = result.Settings.MaxStorageSize;
+        SettingsDefaultBindingAddress = result.Settings.DefaultBindingAddress;
+        SettingsCredentialStore = result.Settings.CredentialStore;
+
+        if (result.ErrorMessage is not null) ErrorMessage = result.ErrorMessage;
+        else StatusMessage = result.FileExists ? $"Loaded {SettingsFilePath}." : "No settings.yaml yet — showing defaults.";
+    });
+
+    [RelayCommand]
+    public Task SaveSettingsAsync() => Guarded(async () =>
+    {
+        // Final validation pass — field-level errors already track live typing, but re-run them
+        // here too so a save can never slip through with a stale/cleared error state.
+        CpuCountError = ValidateOrNull(SettingsCpuCount, WslcSettingsService.ValidateCpuCount);
+        MemorySizeError = ValidateOrNull(SettingsMemorySize, WslcSettingsService.ValidateMemorySize);
+        MaxStorageSizeError = ValidateOrNull(SettingsMaxStorageSize, WslcSettingsService.ValidateMaxStorageSize);
+        DefaultBindingAddressError = ValidateOrNull(SettingsDefaultBindingAddress, WslcSettingsService.ValidateDefaultBindingAddress);
+        OnPropertyChanged(nameof(SettingsHasErrors));
+        if (SettingsHasErrors)
+        {
+            ErrorMessage = "Fix the highlighted settings before saving.";
+            return;
+        }
+
+        var settings = new WslcSettings
+        {
+            CpuCount = Normalize(SettingsCpuCount),
+            MemorySize = Normalize(SettingsMemorySize),
+            MaxStorageSize = Normalize(SettingsMaxStorageSize),
+            DefaultBindingAddress = Normalize(SettingsDefaultBindingAddress),
+            CredentialStore = SettingsCredentialStore,
+        };
+        var result = await _wslcSettings.WriteAsync(settings);
+        if (!result.Success) { ErrorMessage = result.ErrorMessage ?? "Failed to save wslc settings."; return; }
+        StatusMessage = $"Saved {SettingsFilePath}. {SessionChangesMessage}";
+    });
+
+    // ── Runtime bridge ──────────────────────────────────────────────────────
+
+    [RelayCommand]
+    public async Task DetectRuntimeAsync()
+    {
+        if (SelectedDistro is null) { ErrorMessage = "Select a distro first."; return; }
+        await Guarded(async () =>
+        {
+            DetectedRuntime = await _wslc.DetectRuntimeAsync(SelectedDistro.Name);
+            StatusMessage = DetectedRuntime == ContainerRuntime.None
+                ? $"No docker/podman runtime detected in {SelectedDistro.Name}."
+                : $"{DetectedRuntime} detected in {SelectedDistro.Name}.";
+        });
+    }
+
+    private async Task LoadDistrosAsync()
+    {
+        Distros.Clear();
+        foreach (var d in await _distros.ListAsync()) Distros.Add(d);
+    }
+
+    // ── Raw command box ─────────────────────────────────────────────────────
 
     [RelayCommand]
     public async Task ExecuteRawAsync()
@@ -97,18 +617,7 @@ public partial class ContainersViewModel : ObservableObject
         });
     }
 
-    [RelayCommand]
-    public async Task DetectRuntimeAsync()
-    {
-        if (SelectedDistro is null) { ErrorMessage = "Select a distro first."; return; }
-        await Guarded(async () =>
-        {
-            DetectedRuntime = await _wslc.DetectRuntimeAsync(SelectedDistro.Name);
-            StatusMessage = DetectedRuntime == ContainerRuntime.None
-                ? $"No docker/podman runtime detected in {SelectedDistro.Name}."
-                : $"{DetectedRuntime} detected in {SelectedDistro.Name}.";
-        });
-    }
+    // ── Shared plumbing ─────────────────────────────────────────────────────
 
     private static string Compose(RawResult r)
     {
@@ -118,9 +627,12 @@ public partial class ContainersViewModel : ObservableObject
         return string.Join("\n", parts);
     }
 
+    private static string ErrText(RawResult r) => string.IsNullOrWhiteSpace(r.StdErr) ? $"wslc exited {r.ExitCode}." : r.StdErr.Trim();
+    private static string ActionErrText(WslcActionResult r) => string.IsNullOrWhiteSpace(r.StdErr) ? $"wslc exited {r.ExitCode}." : r.StdErr.Trim();
+
     private async Task Guarded(Func<Task> work)
     {
-        IsBusy = true; ErrorMessage = null;
+        IsBusy = true; ErrorMessage = null; StatusMessage = null;
         try { await work(); }
         catch (WslException ex) { ErrorMessage = ex.Message; }
         finally { IsBusy = false; }

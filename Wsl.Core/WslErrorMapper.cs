@@ -13,12 +13,29 @@ public static class WslErrorMapper
         return WslErrorKind.CommandFailed;
     }
 
+    /// <summary>
+    /// The text wsl.exe actually used to explain a failure. It does NOT reliably use stderr:
+    /// `wsl --manage --set-sparse` writes its whole explanation to stdout and leaves stderr empty,
+    /// which surfaced in the UI as a bare "Optimize &lt;distro&gt; failed: " with no reason at all.
+    /// Prefer stderr, fall back to stdout, so the diagnosis reaches the user either way.
+    /// </summary>
+    internal static string FailureText(ProcessResult result)
+    {
+        var err = (result.StdErr ?? "").Trim();
+        return err.Length > 0 ? err : (result.StdOut ?? "").Trim();
+    }
+
     /// <summary>Throws a WslException if exit code is non-zero.</summary>
     public static void ThrowIfFailed(ProcessResult result, string operation)
     {
         if (result.ExitCode == 0) return;
-        var kind = Classify(result.ExitCode, result.StdErr);
-        throw new WslException(kind, $"{operation} failed: {result.StdErr.Trim()}",
-                               result.ExitCode, result.StdErr);
+        var detail = FailureText(result);
+        // Classify on the same text the user is shown, so a stdout-only failure is still
+        // categorised (e.g. "no distribution with the supplied name" on stdout).
+        var kind = Classify(result.ExitCode, detail);
+        var message = detail.Length > 0
+            ? $"{operation} failed: {detail}"
+            : $"{operation} failed with exit code {result.ExitCode}.";
+        throw new WslException(kind, message, result.ExitCode, detail);
     }
 }

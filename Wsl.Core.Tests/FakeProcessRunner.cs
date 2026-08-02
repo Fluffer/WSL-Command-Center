@@ -11,6 +11,10 @@ public sealed class FakeProcessRunner : IProcessRunner
     public string[]? LastArgs { get; private set; }
     public List<string[]> AllArgs { get; } = new();
 
+    /// <summary>Timeout passed to each call, in order. Recorded because a null here means the
+    /// runner's 60s default applies — which silently killed multi-GB export/import operations.</summary>
+    public List<TimeSpan?> AllTimeouts { get; } = new();
+
     public void Enqueue(ProcessResult result) => _results.Enqueue(result);
 
     public void Enqueue(int exitCode, string stdOut, string stdErr = "")
@@ -22,6 +26,7 @@ public sealed class FakeProcessRunner : IProcessRunner
         LastExe = exe;
         LastArgs = args;
         AllArgs.Add(args);
+        AllTimeouts.Add(timeout);
         var result = _results.Count > 0 ? _results.Dequeue() : new ProcessResult(0, "", "");
         return Task.FromResult(result);
     }

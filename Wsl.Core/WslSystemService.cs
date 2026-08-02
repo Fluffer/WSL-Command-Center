@@ -23,7 +23,8 @@ public class WslSystemService
     /// <summary>Runs `wsl --update` to pull the latest WSL kernel/runtime from the Store/GitHub.</summary>
     public async Task UpdateAsync(CancellationToken ct = default)
     {
-        var result = await _runner.RunAsync("wsl.exe", new[] { "--update" }, null, ct);
+        // No timeout: `wsl --update` downloads and installs a new WSL build.
+        var result = await _runner.RunAsync("wsl.exe", new[] { "--update" }, Timeout.InfiniteTimeSpan, ct);
         WslErrorMapper.ThrowIfFailed(result, "Update WSL");
     }
 

@@ -26,8 +26,10 @@ public class WslDiskService
         var terminate = await _runner.RunAsync("wsl.exe", new[] { "--terminate", name }, null, ct);
         WslErrorMapper.ThrowIfFailed(terminate, $"Terminate {name}");
 
+        // No timeout: marking a large vhdx sparse rewrites the file and can run well past the
+        // 60s default, same reasoning as MoveAsync below.
         var sparse = await _runner.RunAsync("wsl.exe",
-            new[] { "--manage", name, "--set-sparse", "true" }, null, ct);
+            new[] { "--manage", name, "--set-sparse", "true" }, Timeout.InfiniteTimeSpan, ct);
         WslErrorMapper.ThrowIfFailed(sparse, $"Optimize {name}");
     }
 
@@ -39,8 +41,11 @@ public class WslDiskService
     /// </summary>
     public async Task<string> TrimAsync(string name, CancellationToken ct = default)
     {
+        // No timeout: fstrim over a large root filesystem routinely exceeds 60s, and being killed
+        // partway leaves the trim incomplete with no useful output to report.
         var r = await _runner.RunAsync("wsl.exe",
-            new[] { "-d", name, "-u", "root", "--", "fstrim", "-v", "/" }, null, ct);
+            new[] { "-d", name, "-u", "root", "--", "fstrim", "-v", "/" },
+            Timeout.InfiniteTimeSpan, ct);
         var output = $"{r.StdOut ?? ""} {r.StdErr ?? ""}".Trim();
 
         if (r.ExitCode == 0)

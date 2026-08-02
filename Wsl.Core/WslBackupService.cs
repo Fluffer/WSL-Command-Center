@@ -9,8 +9,12 @@ public class WslBackupService
     public async Task ExportAsync(string name, string outPath, ExportFormat fmt,
                                   CancellationToken ct = default)
     {
+        // No timeout: exporting a real distro is minutes-to-hours of I/O (a 20 GB distro blows
+        // straight past RealProcessRunner's 60s default and the whole clone/backup/snapshot chain
+        // dies with "wsl.exe timed out"). Cancellation is the caller's job via ct, same as MoveAsync.
         var result = await _runner.RunAsync("wsl.exe",
-            new[] { "--export", name, outPath, "--format", FormatFlag(fmt) }, null, ct);
+            new[] { "--export", name, outPath, "--format", FormatFlag(fmt) },
+            Timeout.InfiniteTimeSpan, ct);
         WslErrorMapper.ThrowIfFailed(result, $"Export {name}");
     }
 
@@ -20,7 +24,8 @@ public class WslBackupService
         var args = sourceFmt == ExportFormat.Vhd
             ? new[] { "--import", name, installDir, archivePath, "--vhd", "--version", version.ToString() }
             : new[] { "--import", name, installDir, archivePath, "--version", version.ToString() };
-        var result = await _runner.RunAsync("wsl.exe", args, null, ct);
+        // Same reasoning as ExportAsync — importing a multi-GB archive must not be killed midway.
+        var result = await _runner.RunAsync("wsl.exe", args, Timeout.InfiniteTimeSpan, ct);
         WslErrorMapper.ThrowIfFailed(result, $"Restore {name}");
     }
 

@@ -1,6 +1,7 @@
 using System;
 using Microsoft.UI.Xaml.Data;
 using Wsl.App.Logic.ViewModels;
+using Wsl.Core;
 using Wsl.Core.Containers;
 
 namespace Wsl.App.Converters;
@@ -30,6 +31,8 @@ public sealed class ListItemAccessibleNameConverter : IValueConverter
             WslcVolume v => $"Volume {v.Name}, {v.Driver} driver",
             WslcNetwork n => $"Network {n.Name}, {n.Driver} driver",
             WslcSessionRow s => $"Session {s.DisplayName}, {s.TotalHuman} total",
+            Distro d => $"Distro {d.Name}, {d.State}, version {d.Version}"
+                        + (d.IsDefault ? ", default" : ""),
             // Deliberately NOT `value.ToString()` — that fallback is the very record-dump this
             // converter exists to suppress.
             _ => string.Empty,

@@ -17,6 +17,7 @@
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="Distributions" Style="{StaticResource TitleTextBlockStyle}" />
                 <Button Command="{x:Bind Vm.RefreshCommand}" ToolTipService.ToolTip="Reload the distro list"
+                        AutomationProperties.Name="Refresh distro list"
                         VerticalAlignment="Center">
                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE72C;" FontSize="14" />
                 </Button>
@@ -63,7 +64,8 @@
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="core:Distro">
-                    <Border Style="{StaticResource CardBorderStyle}">
+                    <Border Style="{StaticResource CardBorderStyle}"
+                            AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
                         <Border.ChildTransitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition />
@@ -100,16 +102,25 @@
 
                             <!-- Actions -->
                             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <Button Click="Start_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Boot this distro.">
+                                <!-- Icon-only buttons need an explicit AutomationProperties.Name: a
+                                     ToolTip does not reliably surface as the UIA Name, so these
+                                     announced as unlabelled "Button" to a screen reader. The row
+                                     itself already announces which distro it is, so a static verb
+                                     is enough here. -->
+                                <Button Click="Start_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Boot this distro."
+                                        AutomationProperties.Name="Start distro">
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE768;" FontSize="14" />
                                 </Button>
-                                <Button Click="Stop_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Shut the distro down (terminate).">
+                                <Button Click="Stop_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Shut the distro down (terminate)."
+                                        AutomationProperties.Name="Stop distro">
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE71A;" FontSize="14" />
                                 </Button>
-                                <Button Click="SetDefault_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Make this the default distro for `wsl`.">
+                                <Button Click="SetDefault_Click" Tag="{x:Bind Name}" ToolTipService.ToolTip="Make this the default distro for `wsl`."
+                                        AutomationProperties.Name="Set as default distro">
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE735;" FontSize="14" />
                                 </Button>
-                                <Button ToolTipService.ToolTip="More actions">
+                                <Button ToolTipService.ToolTip="More actions"
+                                        AutomationProperties.Name="More actions">
                                     <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE712;" FontSize="14" />
                                     <Button.Flyout>
                                         <MenuFlyout>

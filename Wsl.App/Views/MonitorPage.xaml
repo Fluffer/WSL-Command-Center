@@ -71,7 +71,8 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="monitoring:DistroMetrics">
-                        <Border Style="{StaticResource CardBorderStyle}">
+                        <Border Style="{StaticResource CardBorderStyle}"
+                                AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
                             <Grid ColumnSpacing="16">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="180" />

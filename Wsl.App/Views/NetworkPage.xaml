@@ -125,7 +125,8 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="diag:PortForward">
-                        <Border Style="{StaticResource CardBorderStyle}">
+                        <Border Style="{StaticResource CardBorderStyle}"
+                                AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
                             <Grid ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

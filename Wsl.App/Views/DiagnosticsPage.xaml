@@ -41,7 +41,8 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="vm:DiagnosticRow">
-                        <Border Style="{StaticResource CardBorderStyle}">
+                        <Border Style="{StaticResource CardBorderStyle}"
+                                AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
                             <Grid ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />

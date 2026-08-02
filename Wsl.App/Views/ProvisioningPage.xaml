@@ -73,7 +73,8 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="core:StepResult">
-                                <Grid ColumnSpacing="10">
+                                <Grid ColumnSpacing="10"
+                                      AutomationProperties.Name="{x:Bind Converter={StaticResource ListItemAccessibleName}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />

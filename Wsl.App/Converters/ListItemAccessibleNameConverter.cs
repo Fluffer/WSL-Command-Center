@@ -3,6 +3,9 @@ using Microsoft.UI.Xaml.Data;
 using Wsl.App.Logic.ViewModels;
 using Wsl.Core;
 using Wsl.Core.Containers;
+using Wsl.Core.Diagnostics;
+using Wsl.Core.Monitoring;
+using Wsl.Core.Snapshots;
 
 namespace Wsl.App.Converters;
 
@@ -33,10 +36,29 @@ public sealed class ListItemAccessibleNameConverter : IValueConverter
             WslcSessionRow s => $"Session {s.DisplayName}, {s.TotalHuman} total",
             Distro d => $"Distro {d.Name}, {d.State}, version {d.Version}"
                         + (d.IsDefault ? ", default" : ""),
+            StepResult r => $"Step {r.Description}: {(r.Success ? "succeeded" : "failed")}",
+            DiagnosticRow g => $"{g.SeverityLabel}: {g.Title}. {g.Detail}",
+            DistroMetrics m =>
+                $"{m.Name}, CPU {m.CpuPercent:F0} percent, memory {Bytes(m.MemUsedBytes)} of "
+                + $"{Bytes(m.MemTotalBytes)}, disk {Bytes(m.DiskUsedBytes)} of {Bytes(m.DiskTotalBytes)}",
+            Snapshot s =>
+                $"Snapshot {s.Label} of {s.Distro}, {Bytes(s.Bytes)}, taken {s.CreatedUtc.ToLocalTime():g}",
+            PortForward p =>
+                $"Port forward {p.ListenAddress} port {p.ListenPort} to {p.ConnectAddress} port {p.ConnectPort}",
             // Deliberately NOT `value.ToString()` — that fallback is the very record-dump this
             // converter exists to suppress.
             _ => string.Empty,
         };
+
+    /// <summary>Short byte size for speech — "1.4 GB" reads better than "1503238553 bytes".</summary>
+    private static string Bytes(long b)
+    {
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        double v = b;
+        var i = 0;
+        while (v >= 1024 && i < units.Length - 1) { v /= 1024; i++; }
+        return $"{v:0.#} {units[i]}";
+    }
 
     private static string Describe(WslcContainer c)
     {
